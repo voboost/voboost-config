@@ -1,28 +1,28 @@
 # Product Context: voboost-config
 
-## 1. Проблема
+## 1. The Problem
 
-В современных сложных Android-приложениях, особенно в автомобильной сфере (in-vehicle infotainment), существует большое количество настроек, которые могут меняться в зависимости от пользователя, модели автомобиля, региона или даже времени суток.
+In modern, complex Android applications, especially in the automotive sector (in-vehicle infotainment), there is a large number of settings that can change depending on the user, car model, region, or even time of day.
 
-Текущие подходы к управлению конфигурацией часто приводят к следующим проблемам:
-*   **Жестко закодированные значения**: Настройки "зашиты" в коде, что требует перекомпиляции и обновления приложения для любого изменения.
-*   **Сложность динамического обновления**: Изменение поведения приложения "на лету" без перезапуска требует сложной и подверженной ошибкам логики.
-*   **Отсутствие централизации**: Конфигурация разбросана по разным частям приложения (SharedPreferences, SQLite, константы), что затрудняет управление и отладку.
-*   **Отсутствие типизации**: Работа с конфигурацией через `SharedPreferences` или `Bundle` не является типобезопасной и может приводить к ошибкам во время выполнения.
+Current approaches to configuration management often lead to the following issues:
+*   **Hard-coded values**: Settings are embedded in the code, requiring recompilation and application updates for any changes.
+*   **Difficulty of dynamic updates**: Changing application behavior on-the-fly without a restart requires complex and error-prone logic.
+*   **Lack of centralization**: Configuration is scattered across different parts of the application (SharedPreferences, SQLite, constants), making management and debugging difficult.
+*   **Lack of type safety**: Working with configuration via `SharedPreferences` or `Bundle` is not type-safe and can lead to runtime errors.
 
-## 2. Решение
+## 2. The Solution
 
-Библиотека `voboost-config` призвана решить эти проблемы, предоставив централизованный, надежный и динамический механизм управления конфигурацией.
+The `voboost-config` library aims to solve these problems by providing a centralized, reliable, and dynamic configuration management mechanism.
 
-*   **Централизация**: Вся конфигурация хранится в одном YAML-файле, который является "единственным источником правды".
-*   **Типобезопасность**: Благодаря использованию Kotlin `data class` и библиотеки `hoplite`, доступ к конфигурации становится полностью типобезопасным, что устраняет целый класс ошибок.
-*   **Динамичность**: С помощью механизма отслеживания изменений (`FileObserver`) приложения могут мгновенно реагировать на внешние изменения в конфигурации (например, сделанные через диагностический инструмент или панель администратора), обновляя свой UI и поведение без перезапуска.
-*   **Прозрачность изменений**: Функция "diff" позволяет точно понимать, *что именно* изменилось, и реагировать на конкретные изменения, а не просто перезагружать все настройки.
+*   **Centralization**: All configuration is stored in a single YAML file, which serves as the "single source of truth."
+*   **Type Safety**: Through the use of Kotlin `data class` and the `hoplite` library, access to the configuration becomes fully type-safe, eliminating an entire class of errors.
+*   **Dynamism**: Using a change tracking mechanism (`FileObserver`), applications can instantly react to external changes in the configuration (e.g., made through a diagnostic tool or admin panel), updating their UI and behavior without a restart.
+*   **Transparency of Changes**: The "diff" function allows for precise understanding of *what exactly* has changed, enabling reactions to specific modifications rather than just reloading all settings.
 
-## 3. Пользовательский опыт (Developer Experience)
+## 3. Developer Experience
 
-Целевая аудитория библиотеки — разработчики двух (и более) приложений. `voboost-config` должна обеспечить им максимально простой и интуитивно понятный опыт:
-1.  **Простая интеграция**: Минимум шагов для подключения и начала работы.
-2.  **Понятный API**: Четкие и предсказуемые методы в `ConfigManager`.
-3.  **Надежность**: Библиотека должна корректно обрабатывать ошибки (например, невалидный YAML или отсутствие файла) и не приводить к падению хост-приложения.
-4.  **Хорошая документация и пример**: Наличие `voboost-config-demo` как эталонного примера использования.
+The target audience for the library is developers of two (or more) applications. `voboost-config` must provide them with the simplest and most intuitive experience possible:
+1.  **Simple Integration**: Minimal steps to connect and get started.
+2.  **Clear API**: Clean and predictable methods in `ConfigManager`.
+3.  **Reliability**: The library must handle errors correctly (e.g., invalid YAML or missing file) and not cause the host application to crash.
+4.  **Good Documentation and Example**: The presence of `voboost-config-demo` as a reference example of usage.

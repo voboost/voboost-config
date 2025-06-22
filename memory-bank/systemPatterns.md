@@ -1,66 +1,66 @@
 # System Patterns: voboost-config
 
-## 1. Общая архитектура
+## 1. Overall Architecture
 
-Проект `voboost-config` представляет собой **самостоятельный модуль Android-библиотеки (`com.android.library`)**. Он не является частью мультимодульного приложения, а разрабатывается как независимый, переиспользуемый компонент.
+The `voboost-config` project is a **standalone Android library module (`com.android.library`)**. It is not part of a multi-module application but is developed as an independent, reusable component.
 
-Вся логика инкапсулирована внутри этой библиотеки. Внешние потребители, такие как `voboost-config-demo` (которое является отдельным проектом), взаимодействуют с библиотекой исключительно через её публичный API.
+All logic is encapsulated within this library. External consumers, such as `voboost-config-demo` (which is a separate project), interact with the library exclusively through its public API.
 
-## 2. Ключевые компоненты библиотеки
+## 2. Key Library Components
 
-### 2.1. `ConfigManager` (Фасад)
+### 2.1. `ConfigManager` (Facade)
 
-Это единственный публичный класс, предоставляемый библиотекой. Он инкапсулирует всю сложность и предоставляет простой API для хост-приложения.
-*   **Ответственность**: Загрузка, сохранение, предоставление текущей конфигурации и управление подпиской на изменения.
-*   **Дизайн**: Класс спроектирован как "stateless" (без состояния) насколько это возможно. Методы требуют `Context` и `filePath` в качестве аргументов, что делает его более предсказуемым и легким для тестирования.
+This is the only public class provided by the library. It encapsulates all complexity and provides a simple API for the host application.
+*   **Responsibility**: Loading, saving, providing the current configuration, and managing subscriptions to changes.
+*   **Design**: The class is designed to be as "stateless" as possible. Methods require `Context` and `filePath` as arguments, making it more predictable and easier to test.
 
-### 2.2. Модели данных (`models.*`)
+### 2.2. Data Models (`models.*`)
 
-*   **Реализация**: Kotlin `data class` и `enum`.
-*   **Ответственность**: Определяют структуру конфигурационного файла. Их использование вместе с `hoplite` обеспечивает строгую типизацию и валидацию данных на этапе загрузки.
+*   **Implementation**: Kotlin `data class` and `enum`.
+*   **Responsibility**: Define the structure of the configuration file. Their use with `hoplite` ensures strong typing and data validation at the loading stage.
 
-### 2.3. `ConfigFileObserver` (Наблюдатель)
+### 2.3. `ConfigFileObserver` (Observer)
 
-*   **Реализация**: Внутренний класс, наследующийся от `android.os.FileObserver`.
-*   **Ответственность**: Мониторинг файла конфигурации на файловой системе. При обнаружении события `CLOSE_WRITE` (файл изменен и закрыт), он инициирует процесс обновления конфигурации в `ConfigManager`.
+*   **Implementation**: An internal class that inherits from `android.os.FileObserver`.
+*   **Responsibility**: Monitors the configuration file on the filesystem. Upon detecting a `CLOSE_WRITE` event (file modified and closed), it initiates the process of updating the configuration in `ConfigManager`.
 
-### 2.4. `OnConfigChangeListener` (Интерфейс обратного вызова)
+### 2.4. `OnConfigChangeListener` (Callback Interface)
 
-*   **Реализация**: Публичный `interface`.
-*   **Ответственность**: Определяет контракт для обратного вызова, который хост-приложение реализует для получения уведомлений об изменениях в конфигурации.
+*   **Implementation**: A public `interface`.
+*   **Responsibility**: Defines the contract for the callback that the host application implements to receive notifications about configuration changes.
 
-## 3. Поток данных (Data Flow)
+## 3. Data Flow
 
-Поток данных остается тем же, но важно понимать, что "Хост-приложение" — это внешний, независимый потребитель библиотеки.
+The data flow remains the same, but it is important to understand that the "Host Application" is an external, independent consumer of the library.
 
 ```mermaid
 sequenceDiagram
-    participant HostApp as "Хост-приложение (внешнее)"
+    participant HostApp as "Host Application (External)"
     participant Lib as "voboost-config Lib"
     participant File as "config.yaml"
 
     HostApp->>+Lib: loadConfig(context, path)
     Lib->>File: Read
-    File-->>Lib: YAML-строка
+    File-->>Lib: YAML String
     Lib-->>HostApp: Result<AppConfig>
 
     HostApp->>+Lib: startWatching(context, path, listener)
-    Note over Lib: Создает и запускает ConfigFileObserver
+    Note over Lib: Creates and starts ConfigFileObserver
 
-    %% Изменение файла
-    participant External as "Внешний процесс"
-    External->>File: Изменить
+    %% File Change
+    participant External as "External Process"
+    External->>File: Modify
 
     Lib->>HostApp: onConfigChanged(fullConfig, diff)
 ```
 
-## 4. Логика определения изменений (Diff)
+## 4. Change Detection (Diff) Logic
 
-Логика остается без изменений:
-1.  `ConfigFileObserver` обнаруживает изменение файла.
-2.  `ConfigManager` сохраняет текущую загруженную конфигурацию (`oldConfig`).
-3.  `ConfigManager` загружает новую конфигурацию из файла (`newConfig`).
-4.  Создается пустой объект `diffConfig` (с `nullable` полями).
-5.  `ConfigManager` рекурсивно сравнивает `oldConfig` и `newConfig`.
-6.  Если значение поля в `newConfig` отличается от значения в `oldConfig`, оно копируется в `diffConfig`.
-7.  `listener` вызывается с аргументами `newConfig` и `diffConfig`.
+The logic remains unchanged:
+1.  `ConfigFileObserver` detects a file change.
+2.  `ConfigManager` stores the currently loaded configuration (`oldConfig`).
+3.  `ConfigManager` loads the new configuration from the file (`newConfig`).
+4.  An empty `diffConfig` object is created (with `nullable` fields).
+5.  `ConfigManager` recursively compares `oldConfig` and `newConfig`.
+6.  If a field's value in `newConfig` differs from the value in `oldConfig`, it is copied to `diffConfig`.
+7.  The `listener` is called with the `newConfig` and `diffConfig` arguments.

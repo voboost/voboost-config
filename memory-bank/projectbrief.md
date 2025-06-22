@@ -1,27 +1,27 @@
 # Project Brief: voboost-config
 
-## 1. Обзор проекта
+## 1. Project Overview
 
-`voboost-config` — это **самостоятельная, переиспользуемая Android-библиотека (SDK)**, написанная на Kotlin для API 28+, предназначенная для управления конфигурацией приложения. Библиотека предоставляет унифицированный способ чтения, записи и отслеживания изменений в конфигурационных файлах формата YAML.
+`voboost-config` is a **standalone, reusable Android library (SDK)** written in Kotlin for API 28+, designed for application configuration management. The library provides a unified way to read, write, and track changes in YAML configuration files.
 
-## 2. Основная цель
+## 2. Main Goal
 
-Основная цель проекта — инкапсулировать всю логику работы с файлами конфигурации, предоставив хост-приложениям (таким как отдельное приложение `voboost-config-demo` или другие) простой, надежный и типизированный API. Это позволит централизованно управлять настройками и динамически изменять поведение приложений без необходимости их пересборки или перезапуска.
+The primary goal of the project is to encapsulate all logic for working with configuration files, providing host applications (such as the separate `voboost-config-demo` application or others) with a simple, reliable, and type-safe API. This will allow for centralized management of settings and dynamic changes to application behavior without requiring a rebuild or restart.
 
-## 3. Ключевые требования к библиотеке
+## 3. Key Library Requirements
 
-*   **Чтение конфигурации**: Парсинг YAML-файла в строго типизированный Kotlin-объект (`data class`).
-*   **Запись конфигурации**: Сохранение объекта конфигурации обратно в YAML-файл.
-*   **Отслеживание изменений**: Отслеживание изменений в файле конфигурации в реальном времени.
-*   **Дифференциация изменений (Diff)**: Предоставление объекта, содержащего только измененные поля.
-*   **Целевая платформа**: Android 9 (API 28) и выше.
-*   **Основной язык**: Kotlin.
-*   **Зависимости**: Использование библиотеки `hoplite` для работы с YAML.
-*   **Тестируемость**: Библиотека должна быть легко тестируемой. Тестирование будет производиться с помощью отдельного, независимого демо-приложения `voboost-config-demo`.
+*   **Read Configuration**: Parse a YAML file into a strictly-typed Kotlin object (`data class`).
+*   **Write Configuration**: Save the configuration object back to a YAML file.
+*   **Change Tracking**: Track changes to the configuration file in real-time.
+*   **Change Differentiation (Diff)**: Provide an object containing only the modified fields.
+*   **Target Platform**: Android 9 (API 28) and higher.
+*   **Primary Language**: Kotlin.
+*   **Dependencies**: Use the `hoplite` library for handling YAML.
+*   **Testability**: The library must be easily testable. Testing will be performed using a separate, independent demo application, `voboost-config-demo`.
 
-## 4. Структура конфигурации
+## 4. Configuration Structure
 
-Конфигурация имеет 5 корневых разделов:
+The configuration has 5 root sections:
 - `store`
 - `applications`
 - `interface`

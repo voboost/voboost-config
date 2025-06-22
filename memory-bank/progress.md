@@ -1,22 +1,22 @@
 # Progress: voboost-config
 
-## Общий статус
+## Overall Status
 
-Проект находится на начальной стадии.
+The project is in its initial phase.
 
-*   [x] Этап 1: Проектирование и планирование - **Завершено (после корректировки)**
-*   [ ] Этап 2: Создание структуры проекта библиотеки - **Не начато**
-*   [ ] Этап 3: Реализация библиотеки `:voboost-config` - **Не начато**
-*   [ ] Этап 4: Тестирование (с помощью отдельного демо-приложения) - **Не начато**
+*   [x] Stage 1: Design and Planning - **Completed (after adjustments)**
+*   [ ] Stage 2: Create Library Project Structure - **Not Started**
+*   [ ] Stage 3: Implement `:voboost-config` Library - **Not Started**
+*   [ ] Stage 4: Testing (using a separate demo application) - **Not Started**
 
-## Что работает
+## What Works
 
-*   На данный момент ничего, так как код еще не написан.
+*   Nothing at the moment, as no code has been written yet.
 
-## Что осталось сделать
+## What's Left to Do
 
-*   Создать файловую структуру и реализовать код для Android-библиотеки в соответствии с обновленным планом.
+*   Create the file structure and implement the code for the Android library according to the updated plan.
 
-## Известные проблемы
+## Known Issues
 
-*   На данный момент неизвестны.
+*   None known at this time.

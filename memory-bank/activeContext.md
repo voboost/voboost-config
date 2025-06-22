@@ -1,21 +1,21 @@
 # Active Context: voboost-config
 
-## Текущий фокус
+## Current Focus
 
-Мы находимся на финальной стадии **этапа проектирования**. После получения важного уточнения от пользователя была скорректирована архитектура проекта.
+We are in the final stage of the **design phase**. After receiving important clarification from the user, the project architecture has been adjusted.
 
-**Ключевое изменение:** Проект `voboost-config` — это **самостоятельная Android-библиотека**, а не часть мультимодульного проекта. Демо-приложение является отдельным, независимым проектом.
+**Key Change:** The `voboost-config` project is a **standalone Android library**, not part of a multi-module project. The demo application is a separate, independent project.
 
-## Последние изменения
+## Recent Changes
 
-*   **22.06.2025**:
-    *   Создана и согласована первоначальная архитектура проекта.
-    *   **Обнаружена ошибка в понимании структуры проекта.**
-    *   **Скорректирован план (`PLAN.md`) и документация (`systemPatterns.md`, `activeContext.md`, `progress.md`)** для отражения правильной архитектуры — разделения библиотеки и демо-приложения на независимые проекты.
+*   **2025-06-22**:
+    *   The initial project architecture was created and agreed upon.
+    *   **A misunderstanding of the project structure was discovered.**
+    *   **The plan (`PLAN.md`) and documentation (`systemPatterns.md`, `activeContext.md`, `progress.md`) were corrected** to reflect the proper architecture—the separation of the library and the demo application into independent projects.
 
-## Следующие шаги
+## Next Steps
 
-1.  Завершить обновление документации "Memory Bank".
-2.  Запросить переход в режим "Code" для начала реализации.
-3.  Создать структуру проекта **Android-библиотеки** в текущей директории.
-4.  Приступить к реализации библиотеки `voboost-config` в соответствии с обновленным планом.
+1.  Finalize the update of the "Memory Bank" documentation.
+2.  Request a switch to "Code" mode to begin implementation.
+3.  Create the project structure for the **Android library** in the current directory.
+4.  Proceed with the implementation of the `voboost-config` library according to the updated plan.

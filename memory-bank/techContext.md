@@ -1,28 +1,28 @@
 # Technical Context: voboost-config
 
-## 1. Технологический стек
+## 1. Technology Stack
 
-*   **Язык программирования**: [Kotlin](https://kotlinlang.org/) - официальный язык для разработки под Android, обеспечивающий выразительность, безопасность и полную совместимость с Java.
-*   **Платформа**: Android.
-*   **Минимальный уровень API**: API 28 (Android 9.0 Pie). Этот уровень выбран как баланс между поддержкой относительно старых устройств и доступом к современным возможностям платформы.
-*   **Среда разработки**: Android Studio.
-*   **Система сборки**: Gradle.
+*   **Programming Language**: [Kotlin](https://kotlinlang.org/) - The official language for Android development, providing expressiveness, safety, and full Java interoperability.
+*   **Platform**: Android.
+*   **Minimum API Level**: API 28 (Android 9.0 Pie). This level was chosen as a balance between supporting relatively old devices and accessing modern platform features.
+*   **IDE**: Android Studio.
+*   **Build System**: Gradle.
 
-## 2. Ключевые зависимости
+## 2. Key Dependencies
 
-*   **[Hoplite](https://github.com/sksamuel/hoplite)**: Основная библиотека для работы с конфигурацией.
-    *   **Модули**: `hoplite-core`, `hoplite-yaml`.
-    *   **Причина выбора**: Hoplite предоставляет мощный и декларативный способ маппинга конфигурационных файлов (включая YAML) на строго типизированные Kotlin `data class`. Он поддерживает вложенные классы, `enum`, и обрабатывает ошибки парсинга, что идеально подходит для нашей задачи.
+*   **[Hoplite](https://github.com/sksamuel/hoplite)**: The core library for configuration management.
+    *   **Modules**: `hoplite-core`, `hoplite-yaml`.
+    *   **Reason for choice**: Hoplite provides a powerful and declarative way to map configuration files (including YAML) to strictly-typed Kotlin `data classes`. It supports nested classes, `enums`, and handles parsing errors, which is ideal for our task.
 
-*   **[Android KTX](https://developer.android.com/kotlin/ktx)**: Набор расширений Kotlin, который делает разработку под Android более лаконичной и идиоматичной. Будет использоваться по мере необходимости.
+*   **[Android KTX](https://developer.android.com/kotlin/ktx)**: A set of Kotlin extensions that make Android development more concise and idiomatic. It will be used as needed.
 
-## 3. Архитектура и паттерны
+## 3. Architecture and Patterns
 
-*   **Структура проекта**: Мультимодульный Gradle-проект, состоящий из модуля-библиотеки (`voboost-config`) и модуля-приложения (`voboost-config-demo`).
-*   **Паттерн "Фасад"**: Класс `ConfigManager` выступает в роли фасада, скрывая внутреннюю сложность библиотеки и предоставляя простой и понятный публичный API.
-*   **Паттерн "Наблюдатель" (Observer)**: Для отслеживания изменений в файле используется `android.os.FileObserver`, который уведомляет подписчиков (`OnConfigChangeListener`) о событиях.
+*   **Project Structure**: The project is a **standalone Android library**. The demo application (`voboost-config-demo`) is a separate project that will consume the library.
+*   **Facade Pattern**: The `ConfigManager` class acts as a facade, hiding the internal complexity of the library and providing a simple and clear public API.
+*   **Observer Pattern**: `android.os.FileObserver` is used to track file changes, notifying subscribers (`OnConfigChangeListener`) of events.
 
-## 4. Ограничения и особенности
+## 4. Constraints and Features
 
-*   **Работа с файловой системой**: Библиотека будет работать с файлами в приватном хранилище приложения (`Context.getFilesDir()`), чтобы не запрашивать у пользователя разрешения на доступ к общему хранилищу. Это является более безопасным подходом. `voboost-config-demo` будет демонстрировать паттерн копирования дефолтного конфига из `assets` в это хранилище.
-*   **Потокобезопасность**: Начальная версия не будет гарантировать потокобезопасность. Предполагается, что вызовы методов `ConfigManager` будут производиться из одного потока (например, главного потока UI). В будущем это может быть улучшено.
+*   **Filesystem Interaction**: The library will work with files in the application's private storage (`Context.getFilesDir()`) to avoid requesting permissions for shared storage. This is a more secure approach. The `voboost-config-demo` will demonstrate the pattern of copying a default config from `assets` to this storage.
+*   **Thread Safety**: The initial version will not guarantee thread safety. It is assumed that calls to `ConfigManager` methods will be made from a single thread (e.g., the main UI thread). This may be improved in the future.
