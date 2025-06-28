@@ -1,0 +1,9 @@
+settings:
+  language: en
+  theme: dark
+  invalid-yaml-structure: [
+    - missing closing bracket
+vehicle:
+  fuel-mode: invalid_mode
+  drive-mode: 123
+    invalid-indentation

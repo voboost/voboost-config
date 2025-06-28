@@ -1,0 +1,9 @@
+settings:
+  language: en
+  theme: dark
+  interface-shift-x: 0
+  interface-shift-y: 0
+
+vehicle:
+  fuel-mode: intellectual
+  drive-mode: comfort

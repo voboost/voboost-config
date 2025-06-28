@@ -1,0 +1,92 @@
+# Voboost Config - Project Intelligence
+
+## Language Policy (CRITICAL)
+- ALL code comments MUST be in English
+- ALL documentation MUST be in English
+- ALL variable names, function names, class names MUST be in English
+- ALL error messages MUST be in English
+- Configuration VALUES can support multiple languages including Russian
+- This policy is documented in memory bank and must be maintained
+
+## Naming Convention (CRITICAL)
+- Project name is ALWAYS "Voboost" (not "VoBoost")
+- Use "Voboost" in all documentation, comments, and user-facing text
+- This applies to titles, headers, and any references to the project name
+
+## Project Patterns
+
+### Code Organization
+- All public API methods return Result<T> for consistent error handling
+- Never throw exceptions in public API
+- Use nullable properties in Config class for graceful missing value handling
+
+### File Structure
+- Library code in src/main/java/ru/voboost/config/
+- Demo app in ../voboost-config-demo/ directory
+- Memory bank documentation in memory-bank/ directory
+- All build files use Kotlin DSL (.gradle.kts)
+
+### Testing Approach
+- Unit tests for all core functionality
+- Mock Context for Android-specific operations
+- Test resources in src/test/resources/
+- Aim for 100% coverage of public API
+
+### Documentation Standards
+- KDoc comments for all public APIs
+- Comprehensive README.md with usage examples
+- Implementation details in separate technical docs
+- Memory bank for development context
+
+## Critical Implementation Details
+
+### ConfigManager Pattern
+- Stateless facade pattern
+- Context-aware file operations using Android Context
+- File watching with Hoplite Watch
+- Diff calculation using reflection on Config fields
+
+### YAML Integration
+- Hoplite library for parsing and serialization
+- All Config properties nullable for partial configurations
+
+### Error Handling
+- Result<T> pattern throughout public API
+- Detailed error messages for debugging
+- Graceful degradation for missing configuration values
+- No uncaught exceptions in public methods
+
+## Build System
+- Multi-module project with library + demo app
+- Android Gradle Plugin 8.2.0
+- Kotlin 1.9.20
+- Minimum API 28 (Android 9)
+- Hoplite 2.9.0 for YAML processing
+
+## Development Workflow
+- Memory bank MUST be updated when discovering new patterns
+- All changes should maintain backward compatibility
+- Unit tests must pass before any commits
+- Demo app should always demonstrate latest features
+
+## Project Status
+- COMPLETE and PRODUCTION READY
+- All 9 unit tests passing
+- Demo application fully functional
+- Comprehensive documentation complete
+- Ready for external use
+
+## Key Success Factors
+- Simple public API (4 main methods in ConfigManager)
+- Type-safe configuration access
+- Real-time change detection
+- Android-optimized file operations
+- Comprehensive error handling
+- Zero memory leaks in file watching
+
+## Code Style Rules
+- ALL source code files MUST end with a blank line to avoid "No newline at end of file" warnings in diffs
+- This applies to .kt, .java, .yaml, .md and all other text files
+- Always add empty line at the end when creating or modifying files
+- NO EMOJI in any files - use plain text only for all documentation and code
+

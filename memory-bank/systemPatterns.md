@@ -1,66 +1,167 @@
-# System Patterns: voboost-config
+# System Architecture: voboost-config
 
-## 1. Overall Architecture
+## Overview
 
-The `voboost-config` project is a **standalone Android library module (`com.android.library`)**. It is not part of a multi-module application but is developed as an independent, reusable component.
+voboost-config implements a clean, layered architecture for Android configuration management with real-time file watching capabilities.
 
-All logic is encapsulated within this library. External consumers, such as `voboost-config-demo` (which is a separate project), interact with the library exclusively through its public API.
+## Architectural Patterns
 
-## 2. Key Library Components
+### 1. Facade Pattern
+**ConfigManager** serves as the main facade providing a simple 4-method API:
+- `loadConfig()` - Load YAML to type-safe objects
+- `saveConfig()` - Save objects to YAML
+- `startWatching()` - Begin real-time file monitoring
+- `stopWatching()` - Stop monitoring and cleanup
 
-### 2.1. `ConfigManager` (Facade)
+### 2. Observer Pattern
+**OnConfigChangeListener** enables reactive programming:
+- Callbacks when configuration changes
+- Provides both new config and diff
+- Decoupled notification system
 
-This is the only public class provided by the library. It encapsulates all complexity and provides a simple API for the host application.
-*   **Responsibility**: Loading, saving, providing the current configuration, and managing subscriptions to changes.
-*   **Design**: The class is designed to be as "stateless" as possible. Methods require `Context` and `filePath` as arguments, making it more predictable and easier to test.
+### 3. Result Pattern
+**Consistent Error Handling** throughout the API:
+- `Result<T>` return types prevent uncaught exceptions
+- Detailed error messages for debugging
+- Graceful failure handling
 
-### 2.2. Data Models (`models.*`)
+### 4. Builder Pattern
+**Hoplite ConfigLoaderBuilder** for flexible configuration:
+- Property source configuration
+- Custom parsing options
+- Extensible design
 
-*   **Implementation**: Kotlin `data class` and `enum`.
-*   **Responsibility**: Define the structure of the configuration file. Their use with `hoplite` ensures strong typing and data validation at the loading stage.
+## Core Components
 
-### 2.3. `ConfigFileObserver` (Observer)
-
-*   **Implementation**: An internal class that inherits from `android.os.FileObserver`.
-*   **Responsibility**: Monitors the configuration file on the filesystem. Upon detecting a `CLOSE_WRITE` event (file modified and closed), it initiates the process of updating the configuration in `ConfigManager`.
-
-### 2.4. `OnConfigChangeListener` (Callback Interface)
-
-*   **Implementation**: A public `interface`.
-*   **Responsibility**: Defines the contract for the callback that the host application implements to receive notifications about configuration changes.
-
-## 3. Data Flow
-
-The data flow remains the same, but it is important to understand that the "Host Application" is an external, independent consumer of the library.
-
-```mermaid
-sequenceDiagram
-    participant HostApp as "Host Application (External)"
-    participant Lib as "voboost-config Lib"
-    participant File as "config.yaml"
-
-    HostApp->>+Lib: loadConfig(context, path)
-    Lib->>File: Read
-    File-->>Lib: YAML String
-    Lib-->>HostApp: Result<AppConfig>
-
-    HostApp->>+Lib: startWatching(context, path, listener)
-    Note over Lib: Creates and starts ConfigFileObserver
-
-    %% File Change
-    participant External as "External Process"
-    External->>File: Modify
-
-    Lib->>HostApp: onConfigChanged(fullConfig, diff)
+### Data Layer
+```
+Config (root)
+├── Settings
+│   ├── Language enum
+│   ├── Theme enum
+│   ├── interfaceShiftX: Int
+│   └── interfaceShiftY: Int
+└── Vehicle
+    ├── FuelMode enum
+    └── DriveMode enum
 ```
 
-## 4. Change Detection (Diff) Logic
+### Service Layer
+- **ConfigManager** - Main service facade
+- **ReloadableConfig** - File watching orchestrator
+- **FileWatcher** - File system monitoring
 
-The logic remains unchanged:
-1.  `ConfigFileObserver` detects a file change.
-2.  `ConfigManager` stores the currently loaded configuration (`oldConfig`).
-3.  `ConfigManager` loads the new configuration from the file (`newConfig`).
-4.  An empty `diffConfig` object is created (with `nullable` fields).
-5.  `ConfigManager` recursively compares `oldConfig` and `newConfig`.
-6.  If a field's value in `newConfig` differs from the value in `oldConfig`, it is copied to `diffConfig`.
-7.  The `listener` is called with the `newConfig` and `diffConfig` arguments.
+### Integration Layer
+- **Hoplite** - YAML parsing and serialization
+- **Android Context** - File system access
+- **Coroutines** - Non-blocking operations
+
+## File Watching Architecture
+
+### Components
+1. **ReloadableConfig** - Orchestrates watching and reloading
+2. **FileWatcher** - Monitors directory for changes
+3. **ConfigLoader** - Handles YAML parsing
+4. **Subscriber** - Receives change notifications
+
+### Implementation Details
+```kotlin
+// Correct Hoplite ReloadableConfig pattern
+val configLoader = ConfigLoaderBuilder.default()
+    .addPropertySource(PropertySource.file(file))
+    .build()
+
+val reloadable = ReloadableConfig(configLoader, Config::class)
+    .addWatcher(FileWatcher(file.parent ?: file.absolutePath))
+    .withErrorHandler { _ -> /* error handling */ }
+
+reloadable.subscribe { newConfig ->
+    coroutineScope.launch {
+        handleConfigChange(newConfig)
+    }
+}
+```
+
+### Flow
+```
+File Change → FileWatcher → ReloadableConfig → ConfigLoader → Parse → Diff → Callback
+```
+
+### Error Handling
+- **Resilient Design** - Continues working despite individual failures
+- **Error Handler** - Configurable error processing
+- **Graceful Degradation** - Non-critical errors don't stop watching
+- **Coroutine Safety** - Non-blocking error handling
+
+## Configuration Model
+
+### Enum Strategy
+- **Lowercase Constants** - Match YAML values exactly
+- **No Annotations** - Direct string-to-enum mapping
+- **Automatic Serialization** - Uses `enum.name`
+
+### Nullable Design
+- **Optional Fields** - All config properties nullable
+- **Partial Configurations** - Handle missing sections gracefully
+- **Default Handling** - Application-level defaults
+
+## Testing Architecture
+
+### Test Organization
+- **BaseConfigTest** - Common setup and utilities
+- **Functional Tests** - Test specific functionality areas
+- **Integration Tests** - Real file operations
+- **Real-time Tests** - Actual file watching with synchronization
+
+### Test Patterns
+- **Mock Context** - Isolated Android dependencies
+- **Temporary Files** - Real file operations in tests
+- **CountDownLatch** - Synchronization for async operations
+- **Result Validation** - Comprehensive error checking
+
+## Performance Considerations
+
+### Memory Management
+- **Stateless Design** - ConfigManager holds minimal state
+- **Resource Cleanup** - Proper watcher disposal
+- **Efficient Parsing** - Hoplite optimized YAML processing
+
+### File Operations
+- **Android Optimized** - Uses Context.filesDir
+- **Non-blocking** - Coroutine-based change handling
+- **Minimal I/O** - Only reads when changes detected
+
+## Security & Reliability
+
+### File Access
+- **Private Directory** - Uses app's private files directory
+- **No External Storage** - Avoids permission requirements
+- **Secure by Default** - Android app isolation
+
+### Error Resilience
+- **No Crashes** - All public methods return Result
+- **Detailed Errors** - Comprehensive error messages
+- **Graceful Degradation** - Continues working with partial failures
+
+## Extension Points
+
+### Custom Watchers
+- **Watchable Interface** - Add custom monitoring sources
+- **Multiple Watchers** - Support for various change triggers
+- **Configurable Intervals** - Time-based watching options
+
+### Custom Parsing
+- **PropertySource** - Support different configuration sources
+- **Custom Loaders** - Extend parsing capabilities
+- **Validation** - Add configuration validation layers
+
+## Design Principles
+
+1. **Simplicity** - Easy to use API with sensible defaults
+2. **Type Safety** - Compile-time checks prevent runtime errors
+3. **Reliability** - Robust error handling and resource management
+4. **Performance** - Efficient file operations and memory usage
+5. **Testability** - Comprehensive test coverage and mockable design
+6. **Extensibility** - Clear extension points for customization
+
+This architecture provides a solid foundation for configuration management in Android applications while maintaining simplicity and reliability.
