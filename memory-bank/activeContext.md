@@ -83,11 +83,11 @@ vehicle:
 
 ## Demo Application
 
-Complete Android demo app showcasing:
-- Configuration loading and display
-- Real-time change detection
-- File system integration
-- User-friendly interface with change notifications
+Complete Android demo application available in separate voboost-config-demo project:
+- **Location**: ../voboost-config-demo/ (sibling directory)
+- **Purpose**: Demonstrates all library features with real-time visual feedback
+- **Status**: Production-ready standalone Android application
+- **Documentation**: Independent memory bank and project intelligence
 
 ## Development Standards
 

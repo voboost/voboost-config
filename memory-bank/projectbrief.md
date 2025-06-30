@@ -41,10 +41,7 @@ voboost/                        # Parent directory
 │   ├── ConfigManager.kt        # Primary API facade
 │   ├── models/                 # Configuration data classes
 │   └── tests/                  # Comprehensive test suite
-└── voboost-config-demo/        # Separate demonstration project
-    ├── MainActivity.kt         # Library usage example
-    ├── assets/config.yaml      # Sample configuration
-    └── UI components           # Real-time update demonstration
+└── voboost-config-demo/        # Separate demonstration project (independent)
 ```
 
 ### Configuration Model
@@ -99,7 +96,7 @@ vehicle:
 
 ### Delivered Artifacts
 - **Production Library** - Ready for immediate use
-- **Demo Application** - Working example with all features
+- **Demo Application** - Available as separate voboost-config-demo project in ../voboost-config-demo/
 - **Complete Documentation** - API reference and usage guides
 - **Test Suite** - 33+ tests ensuring reliability
 - **Memory Bank** - Development knowledge preservation

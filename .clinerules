@@ -22,7 +22,7 @@
 
 ### File Structure
 - Library code in src/main/java/ru/voboost/config/
-- Demo app in ../voboost-config-demo/ directory
+- Demo app available as separate voboost-config-demo project in ../voboost-config-demo/ directory
 - Memory bank documentation in memory-bank/ directory
 - All build files use Kotlin DSL (.gradle.kts)
 
@@ -65,14 +65,21 @@
 
 ## Development Workflow
 - Memory bank MUST be updated when discovering new patterns
+- All project information MUST be stored in memory bank, not in separate files
 - All changes should maintain backward compatibility
 - Unit tests must pass before any commits
 - Demo app should always demonstrate latest features
 
+## Information Management Rules
+- NEVER create separate documentation files outside memory bank
+- All technical details, implementation notes, and project updates go in memory-bank/
+- Use memory bank files for all project knowledge preservation
+- Keep external files minimal and focused only on immediate technical needs
+
 ## Project Status
 - COMPLETE and PRODUCTION READY
-- All 9 unit tests passing
-- Demo application fully functional
+- All 33+ unit tests passing
+- Demo application available as separate voboost-config-demo project
 - Comprehensive documentation complete
 - Ready for external use
 
