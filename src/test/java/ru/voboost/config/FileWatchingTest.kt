@@ -1,13 +1,12 @@
 package ru.voboost.config
 
 import io.mockk.every
-import org.junit.Test
 import org.junit.Assert.*
+import org.junit.Test
 import ru.voboost.config.models.Config
+import ru.voboost.config.models.FuelMode
 import ru.voboost.config.models.Language
 import ru.voboost.config.models.Theme
-import ru.voboost.config.models.FuelMode
-import ru.voboost.config.models.DriveMode
 import java.io.File
 import java.io.FileWriter
 import java.nio.file.Files
@@ -20,7 +19,6 @@ import java.util.concurrent.TimeUnit
  * Tests cover file watching operations and listener callbacks.
  */
 class FileWatchingTest : BaseConfigTest() {
-
     @Test
     fun testStartWatching_nonExistentFile_returnsFailure() {
         // Test that startWatching fails when file doesn't exist
@@ -30,11 +28,15 @@ class FileWatchingTest : BaseConfigTest() {
         // Mock the context to return our temp directory
         every { mockContext.filesDir } returns tempDir
 
-        val listener = object : OnConfigChangeListener {
-            override fun onConfigChanged(newConfig: Config, diff: Config) {
-                // Should not be called
+        val listener =
+            object : OnConfigChangeListener {
+                override fun onConfigChanged(
+                    newConfig: Config,
+                    diff: Config
+                ) {
+                    // Should not be called
+                }
             }
-        }
 
         val result = configManager.startWatching(mockContext, "nonexistent.yaml", listener)
 
@@ -42,8 +44,10 @@ class FileWatchingTest : BaseConfigTest() {
         val exception = result.exceptionOrNull()
         assertNotNull("Exception should be provided", exception)
         assertTrue("Should be IllegalArgumentException", exception is IllegalArgumentException)
-        assertTrue("Error message should mention file doesn't exist",
-            exception?.message?.contains("Configuration file does not exist") == true)
+        assertTrue(
+            "Error message should mention file doesn't exist",
+            exception?.message?.contains("Configuration file does not exist") == true
+        )
 
         // Clean up
         tempDir.deleteRecursively()
@@ -78,13 +82,17 @@ class FileWatchingTest : BaseConfigTest() {
         var receivedNewConfig: Config? = null
         var receivedDiff: Config? = null
 
-        val listener = object : OnConfigChangeListener {
-            override fun onConfigChanged(newConfig: Config, diff: Config) {
-                callbackInvoked = true
-                receivedNewConfig = newConfig
-                receivedDiff = diff
+        val listener =
+            object : OnConfigChangeListener {
+                override fun onConfigChanged(
+                    newConfig: Config,
+                    diff: Config
+                ) {
+                    callbackInvoked = true
+                    receivedNewConfig = newConfig
+                    receivedDiff = diff
+                }
             }
-        }
 
         // Simulate a callback (this tests the interface contract)
         val testConfig = Config(settingsLanguage = Language.en)
@@ -104,14 +112,15 @@ class FileWatchingTest : BaseConfigTest() {
         val configFile = File(tempDir, "config.yaml")
 
         // Create initial config file
-        val initialYaml = """
+        val initialYaml =
+            """
             settings-language: en
             settings-theme: light
             settings-interface-shift-x: 0
             settings-interface-shift-y: 0
             vehicle-fuel-mode: fuel
             vehicle-drive-mode: comfort
-        """.trimIndent()
+            """.trimIndent()
 
         FileWriter(configFile).use { it.write(initialYaml) }
 
@@ -123,13 +132,17 @@ class FileWatchingTest : BaseConfigTest() {
         var receivedNewConfig: Config? = null
         var receivedDiff: Config? = null
 
-        val listener = object : OnConfigChangeListener {
-            override fun onConfigChanged(newConfig: Config, diff: Config) {
-                receivedNewConfig = newConfig
-                receivedDiff = diff
-                latch.countDown()
+        val listener =
+            object : OnConfigChangeListener {
+                override fun onConfigChanged(
+                    newConfig: Config,
+                    diff: Config
+                ) {
+                    receivedNewConfig = newConfig
+                    receivedDiff = diff
+                    latch.countDown()
+                }
             }
-        }
 
         // Start watching
         val result = configManager.startWatching(mockContext, "config.yaml", listener)
@@ -139,14 +152,15 @@ class FileWatchingTest : BaseConfigTest() {
         Thread.sleep(500)
 
         // Modify the file
-        val modifiedYaml = """
+        val modifiedYaml =
+            """
             settings-language: ru
             settings-theme: dark
             settings-interface-shift-x: 10
             settings-interface-shift-y: -5
             vehicle-fuel-mode: electric
             vehicle-drive-mode: sport
-        """.trimIndent()
+            """.trimIndent()
 
         FileWriter(configFile).use { it.write(modifiedYaml) }
 

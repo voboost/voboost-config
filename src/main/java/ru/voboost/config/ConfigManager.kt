@@ -5,18 +5,12 @@ import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.PropertySource
 import com.sksamuel.hoplite.watch.ReloadableConfig
 import com.sksamuel.hoplite.watch.watchers.FileWatcher
-import ru.voboost.config.models.Config
-import ru.voboost.config.models.Language
-import ru.voboost.config.models.Theme
-import ru.voboost.config.models.FuelMode
-import ru.voboost.config.models.DriveMode
-import java.io.File
-import java.io.FileWriter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlin.reflect.KProperty1
-import kotlin.reflect.full.memberProperties
+import ru.voboost.config.models.Config
+import java.io.File
+import java.io.FileWriter
 
 /**
  * Main facade class for configuration management in Android applications.
@@ -64,7 +58,6 @@ import kotlin.reflect.full.memberProperties
  * @see OnConfigChangeListener
  */
 class ConfigManager {
-
     // Internal state for file watching
     private var reloadableConfig: ReloadableConfig<Config>? = null
     private var currentConfig: Config? = null
@@ -120,20 +113,26 @@ class ConfigManager {
      * @see Config
      * @see saveConfig
      */
-    fun loadConfig(context: Context, filePath: String): Result<Config> {
+    fun loadConfig(
+        context: Context,
+        filePath: String
+    ): Result<Config> {
         return try {
             // Get file from context.filesDir + filePath
             val file = File(context.filesDir, filePath)
 
             if (!file.exists()) {
-                return Result.failure(IllegalArgumentException("Configuration file does not exist: ${file.absolutePath}"))
+                return Result.failure(
+                    IllegalArgumentException("Configuration file does not exist: ${file.absolutePath}")
+                )
             }
 
             // Parse YAML using Hoplite ConfigLoaderBuilder
-            val config = ConfigLoaderBuilder.default()
-                .addPropertySource(PropertySource.file(file))
-                .build()
-                .loadConfigOrThrow<Config>()
+            val config =
+                ConfigLoaderBuilder.default()
+                    .addPropertySource(PropertySource.file(file))
+                    .build()
+                    .loadConfigOrThrow<Config>()
 
             Result.success(config)
         } catch (e: Exception) {
@@ -207,7 +206,11 @@ class ConfigManager {
      * @see Config
      * @see loadConfig
      */
-    fun saveConfig(context: Context, filePath: String, config: Config): Result<Unit> {
+    fun saveConfig(
+        context: Context,
+        filePath: String,
+        config: Config
+    ): Result<Unit> {
         return try {
             // Get file from context.filesDir + filePath
             val file = File(context.filesDir, filePath)
@@ -313,7 +316,11 @@ class ConfigManager {
      * @see stopWatching
      * @see loadConfig
      */
-    fun startWatching(context: Context, filePath: String, listener: OnConfigChangeListener): Result<Unit> {
+    fun startWatching(
+        context: Context,
+        filePath: String,
+        listener: OnConfigChangeListener
+    ): Result<Unit> {
         return try {
             // Stop any existing watcher
             stopWatching()
@@ -322,7 +329,9 @@ class ConfigManager {
             val file = File(context.filesDir, filePath)
 
             if (!file.exists()) {
-                return Result.failure(IllegalArgumentException("Configuration file does not exist: ${file.absolutePath}"))
+                return Result.failure(
+                    IllegalArgumentException("Configuration file does not exist: ${file.absolutePath}")
+                )
             }
 
             // Store current configuration for diff calculation
@@ -338,19 +347,21 @@ class ConfigManager {
             watchedFilePath = filePath
 
             // Create ConfigLoader for the specific file
-            val configLoader = ConfigLoaderBuilder.default()
-                .addPropertySource(PropertySource.file(file))
-                .build()
+            val configLoader =
+                ConfigLoaderBuilder.default()
+                    .addPropertySource(PropertySource.file(file))
+                    .build()
 
             // Create ReloadableConfig with FileWatcher
-            val reloadable = ReloadableConfig(configLoader, Config::class)
-                .addWatcher(FileWatcher(file.parent ?: file.absolutePath))
-                .withErrorHandler { error ->
-                    // Handle parsing errors by notifying the listener
-                    coroutineScope.launch {
-                        handleConfigError(error)
+            val reloadable =
+                ReloadableConfig(configLoader, Config::class)
+                    .addWatcher(FileWatcher(file.parent ?: file.absolutePath))
+                    .withErrorHandler { error ->
+                        // Handle parsing errors by notifying the listener
+                        coroutineScope.launch {
+                            handleConfigError(error)
+                        }
                     }
-                }
 
             // Subscribe to config changes
             reloadable.subscribe { newConfig ->
@@ -485,7 +496,10 @@ class ConfigManager {
      * @param newConfig The new Config object
      * @return Config object with only changed fields, or empty Config if no changes
      */
-    private fun createDiff(oldConfig: Config, newConfig: Config): Config {
+    private fun createDiff(
+        oldConfig: Config,
+        newConfig: Config
+    ): Config {
         return try {
             val configClass = Config::class
             val constructor = configClass.constructors.first()
@@ -564,7 +578,10 @@ class ConfigManager {
      * @see OnConfigChangeListener
      * @see getFieldValue
      */
-    fun isFieldChanged(diff: Config?, fieldName: String): Boolean {
+    fun isFieldChanged(
+        diff: Config?,
+        fieldName: String
+    ): Boolean {
         if (diff == null) return false
         return try {
             val value = getValueByName(diff, fieldName)
@@ -617,7 +634,10 @@ class ConfigManager {
      * @since 1.0.0
      * @see isFieldChanged
      */
-    fun getFieldValue(config: Config?, fieldName: String): String? {
+    fun getFieldValue(
+        config: Config?,
+        fieldName: String
+    ): String? {
         return try {
             getValueByName(config, fieldName)?.toString()
         } catch (e: Exception) {
@@ -784,7 +804,10 @@ class ConfigManager {
      * @param path The field path (simple name or dot notation like "field.subfield")
      * @return The field value, or null if not found or error occurred
      */
-    private fun getValueByPath(config: Config?, path: String): Any? {
+    private fun getValueByPath(
+        config: Config?,
+        path: String
+    ): Any? {
         if (config == null) return null
 
         return try {
@@ -818,7 +841,10 @@ class ConfigManager {
      * @param fieldName The name of the field
      * @return The field value, or null if not found or error occurred
      */
-    private fun getValueByName(config: Config?, fieldName: String): Any? {
+    private fun getValueByName(
+        config: Config?,
+        fieldName: String
+    ): Any? {
         if (config == null) return null
 
         return try {
@@ -840,7 +866,10 @@ class ConfigManager {
      * @param fieldName The name of the field
      * @return The field value, or null if not found or error occurred
      */
-    private fun getFieldValueFromObject(obj: Any, fieldName: String): Any? {
+    private fun getFieldValueFromObject(
+        obj: Any,
+        fieldName: String
+    ): Any? {
         return try {
             val clazz = obj::class.java
             val field = clazz.getDeclaredField(fieldName)
@@ -885,4 +914,3 @@ class ConfigManager {
         return yaml.toString()
     }
 }
-

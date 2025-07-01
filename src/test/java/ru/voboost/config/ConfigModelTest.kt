@@ -1,12 +1,12 @@
 package ru.voboost.config
 
-import org.junit.Test
 import org.junit.Assert.*
+import org.junit.Test
 import ru.voboost.config.models.Config
+import ru.voboost.config.models.DriveMode
+import ru.voboost.config.models.FuelMode
 import ru.voboost.config.models.Language
 import ru.voboost.config.models.Theme
-import ru.voboost.config.models.FuelMode
-import ru.voboost.config.models.DriveMode
 
 /**
  * Tests for Config data model classes.
@@ -14,15 +14,15 @@ import ru.voboost.config.models.DriveMode
  * Tests cover the flattened Config data class functionality with direct field access.
  */
 class ConfigModelTest : BaseConfigTest() {
-
     @Test
     fun testConfig_creation() {
-        val config = Config(
-            settingsLanguage = Language.en,
-            settingsTheme = Theme.dark,
-            vehicleFuelMode = FuelMode.electric,
-            vehicleDriveMode = DriveMode.sport
-        )
+        val config =
+            Config(
+                settingsLanguage = Language.en,
+                settingsTheme = Theme.dark,
+                vehicleFuelMode = FuelMode.electric,
+                vehicleDriveMode = DriveMode.sport
+            )
 
         assertEquals("Language should be set", Language.en, config.settingsLanguage)
         assertEquals("Theme should be set", Theme.dark, config.settingsTheme)
@@ -46,10 +46,11 @@ class ConfigModelTest : BaseConfigTest() {
 
     @Test
     fun testConfig_partialFields() {
-        val config = Config(
-            settingsLanguage = Language.ru,
-            settingsInterfaceShiftX = 10
-        )
+        val config =
+            Config(
+                settingsLanguage = Language.ru,
+                settingsInterfaceShiftX = 10
+            )
 
         assertEquals("Language should be set", Language.ru, config.settingsLanguage)
         assertEquals("Interface shift X should be set", 10, config.settingsInterfaceShiftX)
@@ -61,23 +62,26 @@ class ConfigModelTest : BaseConfigTest() {
 
     @Test
     fun testConfig_equality() {
-        val config1 = Config(
-            settingsLanguage = Language.en,
-            settingsTheme = Theme.auto,
-            vehicleFuelMode = FuelMode.intellectual
-        )
+        val config1 =
+            Config(
+                settingsLanguage = Language.en,
+                settingsTheme = Theme.auto,
+                vehicleFuelMode = FuelMode.intellectual
+            )
 
-        val config2 = Config(
-            settingsLanguage = Language.en,
-            settingsTheme = Theme.auto,
-            vehicleFuelMode = FuelMode.intellectual
-        )
+        val config2 =
+            Config(
+                settingsLanguage = Language.en,
+                settingsTheme = Theme.auto,
+                vehicleFuelMode = FuelMode.intellectual
+            )
 
-        val config3 = Config(
-            settingsLanguage = Language.ru,
-            settingsTheme = Theme.auto,
-            vehicleFuelMode = FuelMode.intellectual
-        )
+        val config3 =
+            Config(
+                settingsLanguage = Language.ru,
+                settingsTheme = Theme.auto,
+                vehicleFuelMode = FuelMode.intellectual
+            )
 
         assertEquals("Configs with same values should be equal", config1, config2)
         assertNotEquals("Configs with different values should not be equal", config1, config3)
@@ -85,12 +89,13 @@ class ConfigModelTest : BaseConfigTest() {
 
     @Test
     fun testConfig_copy() {
-        val original = Config(
-            settingsLanguage = Language.en,
-            settingsTheme = Theme.dark,
-            settingsInterfaceShiftX = 5,
-            vehicleFuelMode = FuelMode.electric
-        )
+        val original =
+            Config(
+                settingsLanguage = Language.en,
+                settingsTheme = Theme.dark,
+                settingsInterfaceShiftX = 5,
+                vehicleFuelMode = FuelMode.electric
+            )
 
         val copy = original.copy(settingsLanguage = Language.ru)
 

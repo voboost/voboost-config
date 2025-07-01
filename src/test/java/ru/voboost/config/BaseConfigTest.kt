@@ -2,13 +2,9 @@ package ru.voboost.config
 
 import android.content.Context
 import io.mockk.*
-import org.junit.Before
 import org.junit.After
+import org.junit.Before
 import ru.voboost.config.models.Config
-import ru.voboost.config.models.Language
-import ru.voboost.config.models.Theme
-import ru.voboost.config.models.FuelMode
-import ru.voboost.config.models.DriveMode
 import java.io.File
 
 /**
@@ -18,7 +14,6 @@ import java.io.File
  * Uses MockK for mocking Android Context.
  */
 abstract class BaseConfigTest {
-
     protected lateinit var mockContext: Context
     protected lateinit var mockFilesDir: File
     protected lateinit var configManager: ConfigManager
@@ -43,7 +38,10 @@ abstract class BaseConfigTest {
     /**
      * Helper method to access private createDiff method via reflection
      */
-    protected fun createDiffViaReflection(oldConfig: Config, newConfig: Config): Config {
+    protected fun createDiffViaReflection(
+        oldConfig: Config,
+        newConfig: Config
+    ): Config {
         val method = ConfigManager::class.java.getDeclaredMethod("createDiff", Config::class.java, Config::class.java)
         method.isAccessible = true
         return method.invoke(configManager, oldConfig, newConfig) as Config

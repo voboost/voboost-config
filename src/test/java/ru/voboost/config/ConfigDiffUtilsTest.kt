@@ -16,7 +16,6 @@ import java.io.File
  * with the flattened Config model structure.
  */
 class ConfigDiffUtilsTest {
-
     private lateinit var configManager: ConfigManager
     private lateinit var mockContext: Context
     private lateinit var mockFilesDir: File
@@ -104,15 +103,19 @@ class ConfigDiffUtilsTest {
 
     @Test
     fun `isFieldChanged handles multiple changed fields correctly`() {
-        val diff = Config(
-            settingsLanguage = Language.en,
-            settingsTheme = Theme.light,
-            vehicleFuelMode = FuelMode.fuel
-        )
+        val diff =
+            Config(
+                settingsLanguage = Language.en,
+                settingsTheme = Theme.light,
+                vehicleFuelMode = FuelMode.fuel
+            )
 
         assertTrue("Language should be changed", configManager.isFieldChanged(diff, "settingsLanguage"))
         assertTrue("Theme should be changed", configManager.isFieldChanged(diff, "settingsTheme"))
-        assertFalse("InterfaceShiftX should not be changed", configManager.isFieldChanged(diff, "settingsInterfaceShiftX"))
+        assertFalse(
+            "InterfaceShiftX should not be changed",
+            configManager.isFieldChanged(diff, "settingsInterfaceShiftX")
+        )
         assertTrue("FuelMode should be changed", configManager.isFieldChanged(diff, "vehicleFuelMode"))
         assertFalse("DriveMode should not be changed", configManager.isFieldChanged(diff, "vehicleDriveMode"))
     }
@@ -229,76 +232,82 @@ class ConfigDiffUtilsTest {
 
     @Test
     fun `isValidConfig returns false when language is null`() {
-        val config = Config(
-            settingsLanguage = null,
-            settingsTheme = Theme.auto,
-            vehicleFuelMode = FuelMode.electric,
-            vehicleDriveMode = DriveMode.sport
-        )
+        val config =
+            Config(
+                settingsLanguage = null,
+                settingsTheme = Theme.auto,
+                vehicleFuelMode = FuelMode.electric,
+                vehicleDriveMode = DriveMode.sport
+            )
         val result = configManager.isValidConfig(config)
         assertFalse("Should return false when language is null", result)
     }
 
     @Test
     fun `isValidConfig returns false when theme is null`() {
-        val config = Config(
-            settingsLanguage = Language.en,
-            settingsTheme = null,
-            vehicleFuelMode = FuelMode.electric,
-            vehicleDriveMode = DriveMode.sport
-        )
+        val config =
+            Config(
+                settingsLanguage = Language.en,
+                settingsTheme = null,
+                vehicleFuelMode = FuelMode.electric,
+                vehicleDriveMode = DriveMode.sport
+            )
         val result = configManager.isValidConfig(config)
         assertFalse("Should return false when theme is null", result)
     }
 
     @Test
     fun `isValidConfig returns false when fuelMode is null`() {
-        val config = Config(
-            settingsLanguage = Language.en,
-            settingsTheme = Theme.auto,
-            vehicleFuelMode = null,
-            vehicleDriveMode = DriveMode.sport
-        )
+        val config =
+            Config(
+                settingsLanguage = Language.en,
+                settingsTheme = Theme.auto,
+                vehicleFuelMode = null,
+                vehicleDriveMode = DriveMode.sport
+            )
         val result = configManager.isValidConfig(config)
         assertFalse("Should return false when fuelMode is null", result)
     }
 
     @Test
     fun `isValidConfig returns false when driveMode is null`() {
-        val config = Config(
-            settingsLanguage = Language.en,
-            settingsTheme = Theme.auto,
-            vehicleFuelMode = FuelMode.electric,
-            vehicleDriveMode = null
-        )
+        val config =
+            Config(
+                settingsLanguage = Language.en,
+                settingsTheme = Theme.auto,
+                vehicleFuelMode = FuelMode.electric,
+                vehicleDriveMode = null
+            )
         val result = configManager.isValidConfig(config)
         assertFalse("Should return false when driveMode is null", result)
     }
 
     @Test
     fun `isValidConfig returns true for complete valid config`() {
-        val config = Config(
-            settingsLanguage = Language.en,
-            settingsTheme = Theme.auto,
-            settingsInterfaceShiftX = 0,
-            settingsInterfaceShiftY = 0,
-            vehicleFuelMode = FuelMode.electric,
-            vehicleDriveMode = DriveMode.sport
-        )
+        val config =
+            Config(
+                settingsLanguage = Language.en,
+                settingsTheme = Theme.auto,
+                settingsInterfaceShiftX = 0,
+                settingsInterfaceShiftY = 0,
+                vehicleFuelMode = FuelMode.electric,
+                vehicleDriveMode = DriveMode.sport
+            )
         val result = configManager.isValidConfig(config)
         assertTrue("Should return true for complete valid config", result)
     }
 
     @Test
     fun `isValidConfig returns false when interface shift fields are null`() {
-        val config = Config(
-            settingsLanguage = Language.ru,
-            settingsTheme = Theme.dark,
-            settingsInterfaceShiftX = null,  // Now required field
-            settingsInterfaceShiftY = null,  // Now required field
-            vehicleFuelMode = FuelMode.fuel,
-            vehicleDriveMode = DriveMode.comfort
-        )
+        val config =
+            Config(
+                settingsLanguage = Language.ru,
+                settingsTheme = Theme.dark,
+                settingsInterfaceShiftX = null, // Now required field
+                settingsInterfaceShiftY = null, // Now required field
+                vehicleFuelMode = FuelMode.fuel,
+                vehicleDriveMode = DriveMode.comfort
+            )
         val result = configManager.isValidConfig(config)
         assertFalse("Should return false when interface shift fields are null", result)
     }
@@ -306,21 +315,23 @@ class ConfigDiffUtilsTest {
     @Test
     fun `isValidConfig validates all enum combinations`() {
         // Test with different valid enum combinations
-        val validCombinations = listOf(
-            listOf(Language.en, Theme.auto, FuelMode.intellectual, DriveMode.comfort),
-            listOf(Language.ru, Theme.light, FuelMode.electric, DriveMode.sport),
-            listOf(Language.en, Theme.dark, FuelMode.fuel, DriveMode.eco)
-        )
+        val validCombinations =
+            listOf(
+                listOf(Language.en, Theme.auto, FuelMode.intellectual, DriveMode.comfort),
+                listOf(Language.ru, Theme.light, FuelMode.electric, DriveMode.sport),
+                listOf(Language.en, Theme.dark, FuelMode.fuel, DriveMode.eco)
+            )
 
         for (combination in validCombinations) {
-            val config = Config(
-                settingsLanguage = combination[0] as Language,
-                settingsTheme = combination[1] as Theme,
-                settingsInterfaceShiftX = 0,
-                settingsInterfaceShiftY = 0,
-                vehicleFuelMode = combination[2] as FuelMode,
-                vehicleDriveMode = combination[3] as DriveMode
-            )
+            val config =
+                Config(
+                    settingsLanguage = combination[0] as Language,
+                    settingsTheme = combination[1] as Theme,
+                    settingsInterfaceShiftX = 0,
+                    settingsInterfaceShiftY = 0,
+                    vehicleFuelMode = combination[2] as FuelMode,
+                    vehicleDriveMode = combination[3] as DriveMode
+                )
             val result = configManager.isValidConfig(config)
             assertTrue("Should return true for valid combination: ${combination.joinToString()}", result)
         }
@@ -328,14 +339,15 @@ class ConfigDiffUtilsTest {
 
     @Test
     fun `isValidConfig returns true with interface shifts set`() {
-        val config = Config(
-            settingsLanguage = Language.en,
-            settingsTheme = Theme.auto,
-            settingsInterfaceShiftX = 10,
-            settingsInterfaceShiftY = -5,
-            vehicleFuelMode = FuelMode.electric,
-            vehicleDriveMode = DriveMode.sport
-        )
+        val config =
+            Config(
+                settingsLanguage = Language.en,
+                settingsTheme = Theme.auto,
+                settingsInterfaceShiftX = 10,
+                settingsInterfaceShiftY = -5,
+                vehicleFuelMode = FuelMode.electric,
+                vehicleDriveMode = DriveMode.sport
+            )
         val result = configManager.isValidConfig(config)
         assertTrue("Should return true with interface shifts set", result)
     }
@@ -399,49 +411,53 @@ class ConfigDiffUtilsTest {
 
     @Test
     fun `hasDiffAnyChanges returns true when multiple fields changed`() {
-        val diff = Config(
-            settingsLanguage = Language.en,
-            settingsTheme = Theme.light,
-            vehicleFuelMode = FuelMode.fuel
-        )
+        val diff =
+            Config(
+                settingsLanguage = Language.en,
+                settingsTheme = Theme.light,
+                vehicleFuelMode = FuelMode.fuel
+            )
         val result = configManager.hasDiffAnyChanges(diff)
         assertTrue("Should return true when multiple fields are non-null", result)
     }
 
     @Test
     fun `hasDiffAnyChanges returns true when all fields changed`() {
-        val diff = Config(
-            settingsLanguage = Language.ru,
-            settingsTheme = Theme.dark,
-            settingsInterfaceShiftX = 25,
-            settingsInterfaceShiftY = -10,
-            vehicleFuelMode = FuelMode.save,
-            vehicleDriveMode = DriveMode.individual
-        )
+        val diff =
+            Config(
+                settingsLanguage = Language.ru,
+                settingsTheme = Theme.dark,
+                settingsInterfaceShiftX = 25,
+                settingsInterfaceShiftY = -10,
+                vehicleFuelMode = FuelMode.save,
+                vehicleDriveMode = DriveMode.individual
+            )
         val result = configManager.hasDiffAnyChanges(diff)
         assertTrue("Should return true when all fields are non-null", result)
     }
 
     @Test
     fun `hasDiffAnyChanges works with zero values`() {
-        val diff = Config(
-            settingsInterfaceShiftX = 0,
-            settingsInterfaceShiftY = 0
-        )
+        val diff =
+            Config(
+                settingsInterfaceShiftX = 0,
+                settingsInterfaceShiftY = 0
+            )
         val result = configManager.hasDiffAnyChanges(diff)
         assertTrue("Should return true even when integer fields are zero (non-null)", result)
     }
 
     @Test
     fun `hasDiffAnyChanges handles mixed null and non-null fields`() {
-        val diff = Config(
-            settingsLanguage = null,
-            settingsTheme = Theme.auto,
-            settingsInterfaceShiftX = null,
-            settingsInterfaceShiftY = null,
-            vehicleFuelMode = null,
-            vehicleDriveMode = null
-        )
+        val diff =
+            Config(
+                settingsLanguage = null,
+                settingsTheme = Theme.auto,
+                settingsInterfaceShiftX = null,
+                settingsInterfaceShiftY = null,
+                vehicleFuelMode = null,
+                vehicleDriveMode = null
+            )
         val result = configManager.hasDiffAnyChanges(diff)
         assertTrue("Should return true when at least one field is non-null", result)
     }
@@ -460,24 +476,26 @@ class ConfigDiffUtilsTest {
     @Test
     fun `diff utility methods work together correctly`() {
         // Create a complete config
-        val fullConfig = Config(
-            settingsLanguage = Language.en,
-            settingsTheme = Theme.auto,
-            settingsInterfaceShiftX = 0,
-            settingsInterfaceShiftY = 0,
-            vehicleFuelMode = FuelMode.electric,
-            vehicleDriveMode = DriveMode.sport
-        )
+        val fullConfig =
+            Config(
+                settingsLanguage = Language.en,
+                settingsTheme = Theme.auto,
+                settingsInterfaceShiftX = 0,
+                settingsInterfaceShiftY = 0,
+                vehicleFuelMode = FuelMode.electric,
+                vehicleDriveMode = DriveMode.sport
+            )
 
         // Create a diff with only some fields changed
-        val diff = Config(
-            settingsLanguage = Language.ru,
-            settingsTheme = null,
-            settingsInterfaceShiftX = null,
-            settingsInterfaceShiftY = null,
-            vehicleFuelMode = null,
-            vehicleDriveMode = DriveMode.comfort
-        )
+        val diff =
+            Config(
+                settingsLanguage = Language.ru,
+                settingsTheme = null,
+                settingsInterfaceShiftX = null,
+                settingsInterfaceShiftY = null,
+                vehicleFuelMode = null,
+                vehicleDriveMode = DriveMode.comfort
+            )
 
         // Test isFieldChanged
         assertTrue("Language should be changed", configManager.isFieldChanged(diff, "settingsLanguage"))
@@ -511,44 +529,54 @@ class ConfigDiffUtilsTest {
         // Simulate a typical diff workflow scenario
         val emptyDiff = Config()
         val partialDiff = Config(settingsLanguage = Language.ru)
-        val fullDiff = Config(
-            settingsLanguage = Language.en,
-            settingsTheme = Theme.dark,
-            settingsInterfaceShiftX = 10,
-            settingsInterfaceShiftY = -5,
-            vehicleFuelMode = FuelMode.electric,
-            vehicleDriveMode = DriveMode.sport
-        )
+        val fullDiff =
+            Config(
+                settingsLanguage = Language.en,
+                settingsTheme = Theme.dark,
+                settingsInterfaceShiftX = 10,
+                settingsInterfaceShiftY = -5,
+                vehicleFuelMode = FuelMode.electric,
+                vehicleDriveMode = DriveMode.sport
+            )
 
         // Test empty diff
         assertFalse("Empty diff should have no changes", configManager.hasDiffAnyChanges(emptyDiff))
 
         // Test partial diff
         assertTrue("Partial diff should have changes", configManager.hasDiffAnyChanges(partialDiff))
-        assertTrue("Language should be changed in partial diff", configManager.isFieldChanged(partialDiff, "settingsLanguage"))
-        assertFalse("Theme should not be changed in partial diff", configManager.isFieldChanged(partialDiff, "settingsTheme"))
+        assertTrue(
+            "Language should be changed in partial diff",
+            configManager.isFieldChanged(partialDiff, "settingsLanguage")
+        )
+        assertFalse(
+            "Theme should not be changed in partial diff",
+            configManager.isFieldChanged(partialDiff, "settingsTheme")
+        )
 
         // Test full diff
         assertTrue("Full diff should have changes", configManager.hasDiffAnyChanges(fullDiff))
-        assertTrue("All fields should be changed in full diff",
+        assertTrue(
+            "All fields should be changed in full diff",
             configManager.isFieldChanged(fullDiff, "settingsLanguage") &&
-            configManager.isFieldChanged(fullDiff, "settingsTheme") &&
-            configManager.isFieldChanged(fullDiff, "settingsInterfaceShiftX") &&
-            configManager.isFieldChanged(fullDiff, "settingsInterfaceShiftY") &&
-            configManager.isFieldChanged(fullDiff, "vehicleFuelMode") &&
-            configManager.isFieldChanged(fullDiff, "vehicleDriveMode"))
+                configManager.isFieldChanged(fullDiff, "settingsTheme") &&
+                configManager.isFieldChanged(fullDiff, "settingsInterfaceShiftX") &&
+                configManager.isFieldChanged(fullDiff, "settingsInterfaceShiftY") &&
+                configManager.isFieldChanged(fullDiff, "vehicleFuelMode") &&
+                configManager.isFieldChanged(fullDiff, "vehicleDriveMode")
+        )
     }
 
     @Test
     fun `all field names work correctly with utility methods`() {
-        val config = Config(
-            settingsLanguage = Language.ru,
-            settingsTheme = Theme.dark,
-            settingsInterfaceShiftX = 25,
-            settingsInterfaceShiftY = -10,
-            vehicleFuelMode = FuelMode.save,
-            vehicleDriveMode = DriveMode.individual
-        )
+        val config =
+            Config(
+                settingsLanguage = Language.ru,
+                settingsTheme = Theme.dark,
+                settingsInterfaceShiftX = 25,
+                settingsInterfaceShiftY = -10,
+                vehicleFuelMode = FuelMode.save,
+                vehicleDriveMode = DriveMode.individual
+            )
 
         // Test all field names work with getFieldValue
         assertEquals("ru", configManager.getFieldValue(config, "settingsLanguage"))
@@ -561,8 +589,14 @@ class ConfigDiffUtilsTest {
         // Test all field names work with isFieldChanged
         assertTrue("Language should be detected as changed", configManager.isFieldChanged(config, "settingsLanguage"))
         assertTrue("Theme should be detected as changed", configManager.isFieldChanged(config, "settingsTheme"))
-        assertTrue("InterfaceShiftX should be detected as changed", configManager.isFieldChanged(config, "settingsInterfaceShiftX"))
-        assertTrue("InterfaceShiftY should be detected as changed", configManager.isFieldChanged(config, "settingsInterfaceShiftY"))
+        assertTrue(
+            "InterfaceShiftX should be detected as changed",
+            configManager.isFieldChanged(config, "settingsInterfaceShiftX")
+        )
+        assertTrue(
+            "InterfaceShiftY should be detected as changed",
+            configManager.isFieldChanged(config, "settingsInterfaceShiftY")
+        )
         assertTrue("FuelMode should be detected as changed", configManager.isFieldChanged(config, "vehicleFuelMode"))
         assertTrue("DriveMode should be detected as changed", configManager.isFieldChanged(config, "vehicleDriveMode"))
     }

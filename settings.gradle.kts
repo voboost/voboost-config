@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "voboost-config"
-include(":voboost-config-demo")
+

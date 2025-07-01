@@ -121,7 +121,10 @@ interface OnConfigChangeListener {
      * @see ConfigManager.startWatching
      * @see ConfigManager.stopWatching
      */
-    fun onConfigChanged(newConfig: Config, diff: Config)
+    fun onConfigChanged(
+        newConfig: Config,
+        diff: Config
+    )
 
     /**
      * Called when the watched configuration file has been modified but parsing failed.
@@ -167,4 +170,3 @@ interface OnConfigChangeListener {
         // Default empty implementation for backward compatibility
     }
 }
-

@@ -1,7 +1,7 @@
 package ru.voboost.config
 
-import org.junit.Test
 import org.junit.Assert.*
+import org.junit.Test
 
 /**
  * Basic functionality tests for ConfigManager.
@@ -9,7 +9,6 @@ import org.junit.Assert.*
  * Tests cover basic instantiation and simple operations.
  */
 class BasicConfigManagerTest : BaseConfigTest() {
-
     @Test
     fun testConfigManager_initialization() {
         // Test that ConfigManager can be instantiated

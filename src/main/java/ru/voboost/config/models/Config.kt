@@ -79,7 +79,6 @@ data class Config(
      * **YAML Key**: `settings-language`
      */
     val settingsLanguage: Language? = null,
-
     /**
      * Application theme/appearance setting.
      *
@@ -90,7 +89,6 @@ data class Config(
      * **YAML Key**: `settings-theme`
      */
     val settingsTheme: Theme? = null,
-
     /**
      * Horizontal interface positioning adjustment in pixels.
      *
@@ -101,7 +99,6 @@ data class Config(
      * **YAML Key**: `settings-interface-shift-x`
      */
     val settingsInterfaceShiftX: Int? = null,
-
     /**
      * Vertical interface positioning adjustment in pixels.
      *
@@ -112,7 +109,6 @@ data class Config(
      * **YAML Key**: `settings-interface-shift-y`
      */
     val settingsInterfaceShiftY: Int? = null,
-
     /**
      * Vehicle fuel/energy management mode setting.
      *
@@ -124,7 +120,6 @@ data class Config(
      * **YAML Key**: `vehicle-fuel-mode`
      */
     val vehicleFuelMode: FuelMode? = null,
-
     /**
      * Vehicle driving behavior mode setting.
      *

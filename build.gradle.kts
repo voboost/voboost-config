@@ -2,7 +2,11 @@ plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.parcelize")
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
 }
+
+// Apply Voboost code style configuration
+apply(from = "../voboost-codestyle/codestyle.gradle")
 
 android {
     namespace = "ru.voboost.config"

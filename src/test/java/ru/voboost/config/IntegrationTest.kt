@@ -1,13 +1,13 @@
 package ru.voboost.config
 
 import io.mockk.every
-import org.junit.Test
 import org.junit.Assert.*
+import org.junit.Test
 import ru.voboost.config.models.Config
+import ru.voboost.config.models.DriveMode
+import ru.voboost.config.models.FuelMode
 import ru.voboost.config.models.Language
 import ru.voboost.config.models.Theme
-import ru.voboost.config.models.FuelMode
-import ru.voboost.config.models.DriveMode
 import java.io.File
 import java.nio.file.Files
 
@@ -17,7 +17,6 @@ import java.nio.file.Files
  * Tests cover complete YAML->Config pipeline with real file operations using the flattened Config model.
  */
 class IntegrationTest : BaseConfigTest() {
-
     @Test
     fun testLoadConfig_realYamlFile_sampleConfig() {
         // Test loading the actual sample_config.yaml file through Hoplite
@@ -28,14 +27,15 @@ class IntegrationTest : BaseConfigTest() {
         val configFile = File(tempDir, "config.yaml")
 
         // Copy sample_config.yaml content to temp file
-        val sampleConfigContent = """
+        val sampleConfigContent =
+            """
             settings-language: "en"
             settings-theme: "dark"
             settings-interface-shift-x: 0
             settings-interface-shift-y: 0
             vehicle-fuel-mode: "intellectual"
             vehicle-drive-mode: "comfort"
-        """.trimIndent()
+            """.trimIndent()
 
         configFile.writeText(sampleConfigContent)
 
@@ -69,14 +69,15 @@ class IntegrationTest : BaseConfigTest() {
         val configFile = File(tempDir, "config.yaml")
 
         // Test with different enum values
-        val configContent = """
+        val configContent =
+            """
             settings-language: "ru"
             settings-theme: "auto"
             settings-interface-shift-x: 15
             settings-interface-shift-y: -10
             vehicle-fuel-mode: "electric"
             vehicle-drive-mode: "sport"
-        """.trimIndent()
+            """.trimIndent()
 
         configFile.writeText(configContent)
 
@@ -106,11 +107,12 @@ class IntegrationTest : BaseConfigTest() {
         val tempDir = File(Files.createTempDirectory("partial_test").toString())
         val configFile = File(tempDir, "config.yaml")
 
-        val configContent = """
+        val configContent =
+            """
             settings-language: "en"
             settings-theme: "light"
             vehicle-fuel-mode: "fuel"
-        """.trimIndent()
+            """.trimIndent()
 
         configFile.writeText(configContent)
 
@@ -142,10 +144,11 @@ class IntegrationTest : BaseConfigTest() {
         val tempDir = File(Files.createTempDirectory("invalid_enum_test").toString())
         val configFile = File(tempDir, "config.yaml")
 
-        val configContent = """
+        val configContent =
+            """
             settings-language: "invalid_language"
             settings-theme: "dark"
-        """.trimIndent()
+            """.trimIndent()
 
         configFile.writeText(configContent)
 
@@ -167,14 +170,15 @@ class IntegrationTest : BaseConfigTest() {
         val tempDir = File(Files.createTempDirectory("roundtrip_test").toString())
         every { mockContext.filesDir } returns tempDir
 
-        val originalConfig = Config(
-            settingsLanguage = Language.ru,
-            settingsTheme = Theme.dark,
-            settingsInterfaceShiftX = 25,
-            settingsInterfaceShiftY = -5,
-            vehicleFuelMode = FuelMode.save,
-            vehicleDriveMode = DriveMode.individual
-        )
+        val originalConfig =
+            Config(
+                settingsLanguage = Language.ru,
+                settingsTheme = Theme.dark,
+                settingsInterfaceShiftX = 25,
+                settingsInterfaceShiftY = -5,
+                vehicleFuelMode = FuelMode.save,
+                vehicleDriveMode = DriveMode.individual
+            )
 
         // Save config
         val saveResult = configManager.saveConfig(mockContext, "roundtrip.yaml", originalConfig)
@@ -190,8 +194,16 @@ class IntegrationTest : BaseConfigTest() {
         // Verify all fields match with flattened structure
         assertEquals("Language should match", originalConfig.settingsLanguage, loadedConfig?.settingsLanguage)
         assertEquals("Theme should match", originalConfig.settingsTheme, loadedConfig?.settingsTheme)
-        assertEquals("Interface shift X should match", originalConfig.settingsInterfaceShiftX, loadedConfig?.settingsInterfaceShiftX)
-        assertEquals("Interface shift Y should match", originalConfig.settingsInterfaceShiftY, loadedConfig?.settingsInterfaceShiftY)
+        assertEquals(
+            "Interface shift X should match",
+            originalConfig.settingsInterfaceShiftX,
+            loadedConfig?.settingsInterfaceShiftX
+        )
+        assertEquals(
+            "Interface shift Y should match",
+            originalConfig.settingsInterfaceShiftY,
+            loadedConfig?.settingsInterfaceShiftY
+        )
         assertEquals("Fuel mode should match", originalConfig.vehicleFuelMode, loadedConfig?.vehicleFuelMode)
         assertEquals("Drive mode should match", originalConfig.vehicleDriveMode, loadedConfig?.vehicleDriveMode)
 
@@ -202,22 +214,24 @@ class IntegrationTest : BaseConfigTest() {
     fun testLoadConfig_realYamlFile_allDriveModes() {
         // Test all DriveMode enum values to ensure complete coverage
 
-        val driveModes = listOf(
-            "eco" to DriveMode.eco,
-            "comfort" to DriveMode.comfort,
-            "sport" to DriveMode.sport,
-            "snow" to DriveMode.snow,
-            "outing" to DriveMode.outing,
-            "individual" to DriveMode.individual
-        )
+        val driveModes =
+            listOf(
+                "eco" to DriveMode.eco,
+                "comfort" to DriveMode.comfort,
+                "sport" to DriveMode.sport,
+                "snow" to DriveMode.snow,
+                "outing" to DriveMode.outing,
+                "individual" to DriveMode.individual
+            )
 
         driveModes.forEach { (yamlValue, expectedEnum) ->
             val tempDir = File(Files.createTempDirectory("drivemode_test_$yamlValue").toString())
             val configFile = File(tempDir, "config.yaml")
 
-            val configContent = """
+            val configContent =
+                """
                 vehicle-drive-mode: "$yamlValue"
-            """.trimIndent()
+                """.trimIndent()
 
             configFile.writeText(configContent)
 
@@ -227,8 +241,11 @@ class IntegrationTest : BaseConfigTest() {
 
             assertTrue("Loading should succeed for $yamlValue", result.isSuccess)
             val config = result.getOrNull()
-            assertEquals("Drive mode should be $expectedEnum for YAML value $yamlValue",
-                expectedEnum, config?.vehicleDriveMode)
+            assertEquals(
+                "Drive mode should be $expectedEnum for YAML value $yamlValue",
+                expectedEnum,
+                config?.vehicleDriveMode
+            )
 
             tempDir.deleteRecursively()
         }
@@ -238,20 +255,22 @@ class IntegrationTest : BaseConfigTest() {
     fun testLoadConfig_realYamlFile_allFuelModes() {
         // Test all FuelMode enum values to ensure complete coverage
 
-        val fuelModes = listOf(
-            "intellectual" to FuelMode.intellectual,
-            "electric" to FuelMode.electric,
-            "fuel" to FuelMode.fuel,
-            "save" to FuelMode.save
-        )
+        val fuelModes =
+            listOf(
+                "intellectual" to FuelMode.intellectual,
+                "electric" to FuelMode.electric,
+                "fuel" to FuelMode.fuel,
+                "save" to FuelMode.save
+            )
 
         fuelModes.forEach { (yamlValue, expectedEnum) ->
             val tempDir = File(Files.createTempDirectory("fuelmode_test_$yamlValue").toString())
             val configFile = File(tempDir, "config.yaml")
 
-            val configContent = """
+            val configContent =
+                """
                 vehicle-fuel-mode: "$yamlValue"
-            """.trimIndent()
+                """.trimIndent()
 
             configFile.writeText(configContent)
 
@@ -261,8 +280,11 @@ class IntegrationTest : BaseConfigTest() {
 
             assertTrue("Loading should succeed for $yamlValue", result.isSuccess)
             val config = result.getOrNull()
-            assertEquals("Fuel mode should be $expectedEnum for YAML value $yamlValue",
-                expectedEnum, config?.vehicleFuelMode)
+            assertEquals(
+                "Fuel mode should be $expectedEnum for YAML value $yamlValue",
+                expectedEnum,
+                config?.vehicleFuelMode
+            )
 
             tempDir.deleteRecursively()
         }
@@ -272,18 +294,20 @@ class IntegrationTest : BaseConfigTest() {
     fun testLoadConfig_realYamlFile_allLanguages() {
         // Test all Language enum values
 
-        val languages = listOf(
-            "en" to Language.en,
-            "ru" to Language.ru
-        )
+        val languages =
+            listOf(
+                "en" to Language.en,
+                "ru" to Language.ru
+            )
 
         languages.forEach { (yamlValue, expectedEnum) ->
             val tempDir = File(Files.createTempDirectory("language_test_$yamlValue").toString())
             val configFile = File(tempDir, "config.yaml")
 
-            val configContent = """
+            val configContent =
+                """
                 settings-language: "$yamlValue"
-            """.trimIndent()
+                """.trimIndent()
 
             configFile.writeText(configContent)
 
@@ -293,8 +317,11 @@ class IntegrationTest : BaseConfigTest() {
 
             assertTrue("Loading should succeed for $yamlValue", result.isSuccess)
             val config = result.getOrNull()
-            assertEquals("Language should be $expectedEnum for YAML value $yamlValue",
-                expectedEnum, config?.settingsLanguage)
+            assertEquals(
+                "Language should be $expectedEnum for YAML value $yamlValue",
+                expectedEnum,
+                config?.settingsLanguage
+            )
 
             tempDir.deleteRecursively()
         }
@@ -304,19 +331,21 @@ class IntegrationTest : BaseConfigTest() {
     fun testLoadConfig_realYamlFile_allThemes() {
         // Test all Theme enum values
 
-        val themes = listOf(
-            "auto" to Theme.auto,
-            "light" to Theme.light,
-            "dark" to Theme.dark
-        )
+        val themes =
+            listOf(
+                "auto" to Theme.auto,
+                "light" to Theme.light,
+                "dark" to Theme.dark
+            )
 
         themes.forEach { (yamlValue, expectedEnum) ->
             val tempDir = File(Files.createTempDirectory("theme_test_$yamlValue").toString())
             val configFile = File(tempDir, "config.yaml")
 
-            val configContent = """
+            val configContent =
+                """
                 settings-theme: "$yamlValue"
-            """.trimIndent()
+                """.trimIndent()
 
             configFile.writeText(configContent)
 
@@ -326,8 +355,11 @@ class IntegrationTest : BaseConfigTest() {
 
             assertTrue("Loading should succeed for $yamlValue", result.isSuccess)
             val config = result.getOrNull()
-            assertEquals("Theme should be $expectedEnum for YAML value $yamlValue",
-                expectedEnum, config?.settingsTheme)
+            assertEquals(
+                "Theme should be $expectedEnum for YAML value $yamlValue",
+                expectedEnum,
+                config?.settingsTheme
+            )
 
             tempDir.deleteRecursively()
         }
@@ -340,10 +372,11 @@ class IntegrationTest : BaseConfigTest() {
         val tempDir = File(Files.createTempDirectory("interface_shift_test").toString())
         val configFile = File(tempDir, "config.yaml")
 
-        val configContent = """
+        val configContent =
+            """
             settings-interface-shift-x: 100
             settings-interface-shift-y: -50
-        """.trimIndent()
+            """.trimIndent()
 
         configFile.writeText(configContent)
 
