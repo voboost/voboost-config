@@ -3,10 +3,17 @@ package ru.voboost.config
 import android.content.Context
 import io.mockk.every
 import io.mockk.mockk
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import ru.voboost.config.models.*
+import ru.voboost.config.models.Config
+import ru.voboost.config.models.DriveMode
+import ru.voboost.config.models.FuelMode
+import ru.voboost.config.models.Language
+import ru.voboost.config.models.Theme
 import java.io.File
 
 /**
@@ -303,8 +310,10 @@ class ConfigDiffUtilsTest {
             Config(
                 settingsLanguage = Language.ru,
                 settingsTheme = Theme.dark,
-                settingsInterfaceShiftX = null, // Now required field
-                settingsInterfaceShiftY = null, // Now required field
+                // Now required field
+                settingsInterfaceShiftX = null,
+                // Now required field
+                settingsInterfaceShiftY = null,
                 vehicleFuelMode = FuelMode.fuel,
                 vehicleDriveMode = DriveMode.comfort
             )

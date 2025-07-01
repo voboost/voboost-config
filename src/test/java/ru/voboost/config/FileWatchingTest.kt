@@ -1,7 +1,9 @@
 package ru.voboost.config
 
 import io.mockk.every
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.voboost.config.models.Config
 import ru.voboost.config.models.FuelMode

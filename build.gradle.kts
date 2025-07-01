@@ -8,6 +8,14 @@ plugins {
 // Apply Voboost code style configuration
 apply(from = "../voboost-codestyle/codestyle.gradle")
 
+// Configure ktlint to allow lowercase enum names for YAML compatibility
+ktlint {
+    additionalEditorconfig =
+        mapOf(
+            "ktlint_standard_enum-entry-name-case" to "disabled"
+        )
+}
+
 android {
     namespace = "ru.voboost.config"
     compileSdk = 34

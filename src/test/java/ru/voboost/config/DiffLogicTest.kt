@@ -1,6 +1,7 @@
 package ru.voboost.config
 
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import ru.voboost.config.models.Config
 import ru.voboost.config.models.DriveMode
@@ -58,7 +59,8 @@ class DiffLogicTest : BaseConfigTest() {
             )
         val newConfig =
             Config(
-                settingsLanguage = Language.ru, // Only this field changed
+                // Only this field changed
+                settingsLanguage = Language.ru,
                 settingsTheme = Theme.dark,
                 vehicleFuelMode = FuelMode.intellectual,
                 vehicleDriveMode = DriveMode.comfort
@@ -88,12 +90,18 @@ class DiffLogicTest : BaseConfigTest() {
             )
         val newConfig =
             Config(
-                settingsLanguage = Language.ru, // Changed
-                settingsTheme = Theme.light, // Changed
-                settingsInterfaceShiftX = 10, // Same
-                settingsInterfaceShiftY = 15, // Changed
-                vehicleFuelMode = FuelMode.electric, // Changed
-                vehicleDriveMode = DriveMode.comfort // Same
+                // Changed
+                settingsLanguage = Language.ru,
+                // Changed
+                settingsTheme = Theme.light,
+                // Same
+                settingsInterfaceShiftX = 10,
+                // Changed
+                settingsInterfaceShiftY = 15,
+                // Changed
+                vehicleFuelMode = FuelMode.electric,
+                // Same
+                vehicleDriveMode = DriveMode.comfort
             )
 
         val diff = createDiffViaReflection(oldConfig, newConfig)
@@ -111,21 +119,33 @@ class DiffLogicTest : BaseConfigTest() {
     fun testCreateDiff_differentDataTypes_allTypesHandled() {
         val oldConfig =
             Config(
-                settingsLanguage = Language.en, // Enum
-                settingsTheme = Theme.dark, // Enum
-                settingsInterfaceShiftX = 10, // Int
-                settingsInterfaceShiftY = 5, // Int
-                vehicleFuelMode = FuelMode.intellectual, // Enum
-                vehicleDriveMode = DriveMode.eco // Enum
+                // Enum
+                settingsLanguage = Language.en,
+                // Enum
+                settingsTheme = Theme.dark,
+                // Int
+                settingsInterfaceShiftX = 10,
+                // Int
+                settingsInterfaceShiftY = 5,
+                // Enum
+                vehicleFuelMode = FuelMode.intellectual,
+                // Enum
+                vehicleDriveMode = DriveMode.eco
             )
         val newConfig =
             Config(
-                settingsLanguage = Language.ru, // Enum changed
-                settingsTheme = Theme.light, // Enum changed
-                settingsInterfaceShiftX = 20, // Int changed
-                settingsInterfaceShiftY = 15, // Int changed
-                vehicleFuelMode = FuelMode.electric, // Enum changed
-                vehicleDriveMode = DriveMode.sport // Enum changed
+                // Enum changed
+                settingsLanguage = Language.ru,
+                // Enum changed
+                settingsTheme = Theme.light,
+                // Int changed
+                settingsInterfaceShiftX = 20,
+                // Int changed
+                settingsInterfaceShiftY = 15,
+                // Enum changed
+                vehicleFuelMode = FuelMode.electric,
+                // Enum changed
+                vehicleDriveMode = DriveMode.sport
             )
 
         val diff = createDiffViaReflection(oldConfig, newConfig)
@@ -155,12 +175,18 @@ class DiffLogicTest : BaseConfigTest() {
 
         val newConfig =
             Config(
-                settingsLanguage = Language.ru, // Changed
-                settingsTheme = Theme.dark, // Same
-                settingsInterfaceShiftX = 20, // Changed
-                settingsInterfaceShiftY = 5, // New field (null -> value)
-                vehicleFuelMode = FuelMode.intellectual, // Same
-                vehicleDriveMode = DriveMode.sport // Changed
+                // Changed
+                settingsLanguage = Language.ru,
+                // Same
+                settingsTheme = Theme.dark,
+                // Changed
+                settingsInterfaceShiftX = 20,
+                // New field (null -> value)
+                settingsInterfaceShiftY = 5,
+                // Same
+                vehicleFuelMode = FuelMode.intellectual,
+                // Changed
+                vehicleDriveMode = DriveMode.sport
             )
 
         val diff = createDiffViaReflection(oldConfig, newConfig)
@@ -218,9 +244,12 @@ class DiffLogicTest : BaseConfigTest() {
 
         val newConfig =
             Config(
-                settingsLanguage = Language.en, // null -> EN
-                settingsTheme = Theme.dark, // unchanged
-                vehicleFuelMode = FuelMode.intellectual // unchanged
+                // null -> EN
+                settingsLanguage = Language.en,
+                // unchanged
+                settingsTheme = Theme.dark,
+                // unchanged
+                vehicleFuelMode = FuelMode.intellectual
             )
 
         val diff = createDiffViaReflection(oldConfig, newConfig)
@@ -245,9 +274,12 @@ class DiffLogicTest : BaseConfigTest() {
 
         val newConfig =
             Config(
-                settingsLanguage = null, // EN -> null
-                settingsTheme = Theme.dark, // unchanged
-                vehicleFuelMode = FuelMode.intellectual // unchanged
+                // EN -> null
+                settingsLanguage = null,
+                // unchanged
+                settingsTheme = Theme.dark,
+                // unchanged
+                vehicleFuelMode = FuelMode.intellectual
             )
 
         val diff = createDiffViaReflection(oldConfig, newConfig)
@@ -305,9 +337,12 @@ class DiffLogicTest : BaseConfigTest() {
 
         val newConfig =
             Config(
-                settingsLanguage = Language.en, // Same
-                settingsInterfaceShiftX = 15, // Changed
-                settingsInterfaceShiftY = 20 // Same
+                // Same
+                settingsLanguage = Language.en,
+                // Changed
+                settingsInterfaceShiftX = 15,
+                // Same
+                settingsInterfaceShiftY = 20
             )
 
         val diff = createDiffViaReflection(oldConfig, newConfig)
@@ -332,9 +367,12 @@ class DiffLogicTest : BaseConfigTest() {
 
         val newConfig =
             Config(
-                settingsLanguage = Language.ru, // Changed
-                settingsTheme = Theme.dark, // Same
-                vehicleFuelMode = FuelMode.electric // New field (null -> value)
+                // Changed
+                settingsLanguage = Language.ru,
+                // Same
+                settingsTheme = Theme.dark,
+                // New field (null -> value)
+                vehicleFuelMode = FuelMode.electric
                 // Other fields are null
             )
 

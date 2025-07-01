@@ -1,7 +1,9 @@
 package ru.voboost.config
 
 import android.content.Context
-import io.mockk.*
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.unmockkAll
 import org.junit.After
 import org.junit.Before
 import ru.voboost.config.models.Config
