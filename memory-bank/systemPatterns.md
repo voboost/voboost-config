@@ -155,6 +155,29 @@ File Change → FileWatcher → ReloadableConfig → ConfigLoader → Parse → 
 - **Custom Loaders** - Extend parsing capabilities
 - **Validation** - Add configuration validation layers
 
+## Reflection and Field Access Architecture
+
+### Universal Reflection Pattern
+All ConfigManager methods use recursive reflection instead of direct field access for maximum extensibility:
+
+- **createDiff()** - Recursive object traversal for universal field comparison
+- **isFieldChanged()** - Recursive reflection through getValueByPath
+- **isValidConfig()** - Recursive validation through validateObjectRecursively
+- **getValueByPath()** - Universal field access with Config type safety
+
+### Type Safety Rules
+- **Config Type Only** - Never use Any type, always use Config for type safety
+- **Direct Access Exception** - Only convertConfigToYaml uses direct field access for clean YAML output
+- **Universal Methods** - All reflection methods work with any number of fields
+- **Extensible Design** - Automatically handles new fields without code changes
+
+### Recursive Implementation Benefits
+- **Universal** - Works with any configuration structure without hardcoded logic
+- **Extensible** - Automatically supports new fields and nested structures
+- **Type-safe** - Maintains Config type throughout reflection operations
+- **Robust** - Handles complex nested field access dynamically
+- **Maintainable** - Single implementation works for any field count
+
 ## Design Principles
 
 1. **Simplicity** - Easy to use API with sensible defaults
@@ -163,5 +186,7 @@ File Change → FileWatcher → ReloadableConfig → ConfigLoader → Parse → 
 4. **Performance** - Efficient file operations and memory usage
 5. **Testability** - Comprehensive test coverage and mockable design
 6. **Extensibility** - Clear extension points for customization
+7. **Universal Reflection** - Recursive field access for maximum maintainability
 
-This architecture provides a solid foundation for configuration management in Android applications while maintaining simplicity and reliability.
+This architecture provides a solid foundation for configuration management in Android applications while maintaining simplicity, reliability, and universal extensibility through recursive reflection patterns.
+

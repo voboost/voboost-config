@@ -44,8 +44,8 @@ import ru.voboost.config.models.Config
  *
  * ## Error Handling
  * This method is only called when configuration loading and parsing succeeds.
- * If the configuration file becomes invalid or unreadable, this method will not
- * be invoked for that change event.
+ * If the configuration file becomes invalid or unreadable, the [onConfigError]
+ * method will be called instead.
  *
  * ## Performance Considerations
  * - Keep implementations lightweight to avoid blocking the file watcher
@@ -122,4 +122,49 @@ interface OnConfigChangeListener {
      * @see ConfigManager.stopWatching
      */
     fun onConfigChanged(newConfig: Config, diff: Config)
+
+    /**
+     * Called when the watched configuration file has been modified but parsing failed.
+     *
+     * This method is invoked when the file watcher detects a change in the configuration
+     * file, but the new content cannot be parsed successfully. This typically happens when:
+     * - Invalid YAML syntax is introduced
+     * - Invalid enum values are used (e.g., "eco1" instead of "eco")
+     * - Required fields are missing or have wrong types
+     * - File becomes corrupted or unreadable
+     *
+     * ## Error Recovery
+     * When this method is called, the ConfigManager continues to use the last valid
+     * configuration that was successfully loaded. The file watching continues, so if
+     * the file is corrected, [onConfigChanged] will be called with the new valid configuration.
+     *
+     * ## Threading Context
+     * Like [onConfigChanged], this method is invoked on a background thread. For UI updates,
+     * use appropriate thread switching mechanisms.
+     *
+     * ## Implementation Example
+     * ```kotlin
+     * override fun onConfigError(error: Exception) {
+     *     runOnUiThread {
+     *         showErrorMessage("Configuration error: ${error.message}")
+     *         // Keep using the last valid configuration
+     *     }
+     * }
+     * ```
+     *
+     * ## Default Implementation
+     * This method has a default empty implementation to maintain backward compatibility.
+     * Existing implementations of OnConfigChangeListener will continue to work without
+     * modification, but won't receive error notifications.
+     *
+     * @param error The exception that occurred during configuration parsing.
+     *              Contains details about what went wrong.
+     * @since 1.0.0
+     * @see onConfigChanged
+     * @see ConfigManager.startWatching
+     */
+    fun onConfigError(error: Exception) {
+        // Default empty implementation for backward compatibility
+    }
 }
+

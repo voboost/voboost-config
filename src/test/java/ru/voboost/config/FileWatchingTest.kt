@@ -4,11 +4,10 @@ import io.mockk.every
 import org.junit.Test
 import org.junit.Assert.*
 import ru.voboost.config.models.Config
-import ru.voboost.config.models.Settings
 import ru.voboost.config.models.Language
 import ru.voboost.config.models.Theme
-import ru.voboost.config.models.Vehicle
 import ru.voboost.config.models.FuelMode
+import ru.voboost.config.models.DriveMode
 import java.io.File
 import java.io.FileWriter
 import java.nio.file.Files
@@ -88,8 +87,8 @@ class FileWatchingTest : BaseConfigTest() {
         }
 
         // Simulate a callback (this tests the interface contract)
-        val testConfig = Config(settings = Settings(language = Language.en))
-        val testDiff = Config(settings = Settings(language = Language.ru))
+        val testConfig = Config(settingsLanguage = Language.en)
+        val testDiff = Config(settingsLanguage = Language.ru)
 
         listener.onConfigChanged(testConfig, testDiff)
 
@@ -106,11 +105,12 @@ class FileWatchingTest : BaseConfigTest() {
 
         // Create initial config file
         val initialYaml = """
-            settings:
-              language: en
-              theme: light
-            vehicle:
-              fuel-mode: fuel
+            settings-language: en
+            settings-theme: light
+            settings-interface-shift-x: 0
+            settings-interface-shift-y: 0
+            vehicle-fuel-mode: fuel
+            vehicle-drive-mode: comfort
         """.trimIndent()
 
         FileWriter(configFile).use { it.write(initialYaml) }
@@ -140,11 +140,12 @@ class FileWatchingTest : BaseConfigTest() {
 
         // Modify the file
         val modifiedYaml = """
-            settings:
-              language: ru
-              theme: dark
-            vehicle:
-              fuel-mode: electric
+            settings-language: ru
+            settings-theme: dark
+            settings-interface-shift-x: 10
+            settings-interface-shift-y: -5
+            vehicle-fuel-mode: electric
+            vehicle-drive-mode: sport
         """.trimIndent()
 
         FileWriter(configFile).use { it.write(modifiedYaml) }
@@ -155,15 +156,19 @@ class FileWatchingTest : BaseConfigTest() {
 
         // Verify the new config
         assertNotNull("New config should be received", receivedNewConfig)
-        assertEquals("Language should be updated", Language.ru, receivedNewConfig?.settings?.language)
-        assertEquals("Theme should be updated", Theme.dark, receivedNewConfig?.settings?.theme)
-        assertEquals("Fuel mode should be updated", FuelMode.electric, receivedNewConfig?.vehicle?.fuelMode)
+        assertEquals("Language should be updated", Language.ru, receivedNewConfig?.settingsLanguage)
+        assertEquals("Theme should be updated", Theme.dark, receivedNewConfig?.settingsTheme)
+        assertEquals("Interface shift X should be updated", 10, receivedNewConfig?.settingsInterfaceShiftX)
+        assertEquals("Interface shift Y should be updated", -5, receivedNewConfig?.settingsInterfaceShiftY)
+        assertEquals("Fuel mode should be updated", FuelMode.electric, receivedNewConfig?.vehicleFuelMode)
 
         // Verify the diff contains only changed fields
         assertNotNull("Diff should be received", receivedDiff)
-        assertEquals("Diff should contain language change", Language.ru, receivedDiff?.settings?.language)
-        assertEquals("Diff should contain theme change", Theme.dark, receivedDiff?.settings?.theme)
-        assertEquals("Diff should contain fuel mode change", FuelMode.electric, receivedDiff?.vehicle?.fuelMode)
+        assertEquals("Diff should contain language change", Language.ru, receivedDiff?.settingsLanguage)
+        assertEquals("Diff should contain theme change", Theme.dark, receivedDiff?.settingsTheme)
+        assertEquals("Diff should contain interface shift X change", 10, receivedDiff?.settingsInterfaceShiftX)
+        assertEquals("Diff should contain interface shift Y change", -5, receivedDiff?.settingsInterfaceShiftY)
+        assertEquals("Diff should contain fuel mode change", FuelMode.electric, receivedDiff?.vehicleFuelMode)
 
         // Stop watching
         configManager.stopWatching()

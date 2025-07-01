@@ -41,10 +41,17 @@
 ## Critical Implementation Details
 
 ### ConfigManager Pattern
-- Stateless facade pattern
+- Stateless facade pattern with comprehensive API
 - Context-aware file operations using Android Context
-- File watching with Hoplite Watch
+- File watching with Hoplite Watch (NEVER use Java FileWatch)
 - Diff calculation using reflection on Config fields
+- Integrated diff utilities: isFieldChanged, getFieldValue, isValidConfig
+
+### Diff Utilities Integration
+- Refactored from demo project ConfigDiffUtils into main library
+- All functionality now available through ConfigManager
+- Reflection-based field access using dot notation paths
+- Type-safe operations with proper error handling
 
 ### YAML Integration
 - Hoplite library for parsing and serialization
@@ -96,4 +103,28 @@
 - This applies to .kt, .java, .yaml, .md and all other text files
 - Always add empty line at the end when creating or modifying files
 - NO EMOJI in any files - use plain text only for all documentation and code
+
+## Configuration Structure Rules (CRITICAL)
+- NEVER use @ConfigAlias annotations - they are NOT needed and should not be used
+- Config structure is completely FLAT - no nested objects
+- YAML structure is also FLAT with kebab-case keys (settings-language, vehicle-fuel-mode, etc.)
+- Kotlin field names map directly to YAML keys using kebab-case conversion
+- Example: settingsLanguage -> settings-language, vehicleFuelMode -> vehicle-fuel-mode
+- This flat structure simplifies reflection and eliminates annotation complexity
+
+## Reflection and Field Access Rules (CRITICAL)
+- ALL methods in ConfigManager MUST use recursive reflection instead of direct field access
+- NEVER use Any type - always use Config type for type safety
+- Direct field access is ONLY allowed in convertConfigToYaml method for clean YAML output
+- createDiff method MUST use recursive object traversal for universal field comparison
+- isFieldChanged method MUST use recursive reflection through getValueByPath
+- isValidConfig method MUST use recursive validation through validateObjectRecursively
+- getValueByPath method MUST work with Config type and handle any depth of nested fields
+- All reflection-based methods must be universal and extensible for any number of fields
+- These rules ensure the code is maintainable and works with any configuration structure
+
+## Validation Rules (CRITICAL)
+- ALL fields in Config are required when loaded from filesystem (including Int fields)
+- validateObjectRecursively must check that ALL fields are non-null
+- This ensures complete configuration when reading from YAML files
 

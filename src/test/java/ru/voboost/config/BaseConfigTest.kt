@@ -5,8 +5,6 @@ import io.mockk.*
 import org.junit.Before
 import org.junit.After
 import ru.voboost.config.models.Config
-import ru.voboost.config.models.Settings
-import ru.voboost.config.models.Vehicle
 import ru.voboost.config.models.Language
 import ru.voboost.config.models.Theme
 import ru.voboost.config.models.FuelMode

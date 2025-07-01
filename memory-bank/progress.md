@@ -4,7 +4,7 @@
 
 **Release Date**: 2025-06-28
 **Status**: Complete and Ready for Production Use
-**Test Coverage**: 33+ tests passing
+**Test Coverage**: 76+ tests passing
 
 ## Project Summary
 
@@ -15,7 +15,7 @@ voboost-config is a complete Android configuration management library that provi
 ### Configuration Management
 - **Type-safe YAML Loading** - Parse YAML files to Kotlin data classes
 - **Configuration Saving** - Serialize objects back to YAML format
-- **Nested Structure** - Settings and Vehicle configuration sections
+- **Flat Structure** - Direct field mapping without nested objects
 - **Enum Support** - Automatic mapping between YAML strings and enum constants
 
 ### Real-time File Watching
@@ -31,7 +31,7 @@ voboost-config is a complete Android configuration management library that provi
 - **Full Type Safety** - Kotlin compile-time checks throughout
 
 ### Testing & Quality
-- **Comprehensive Tests** - 33+ unit tests covering all functionality
+- **Comprehensive Tests** - 76+ unit tests covering all functionality
 - **Real File Tests** - Actual file watching with synchronization testing
 - **Modular Structure** - Organized test files for maintainability
 - **100% API Coverage** - All public methods tested
@@ -39,11 +39,16 @@ voboost-config is a complete Android configuration management library that provi
 ## Technical Architecture
 
 ### Library Components
-- **ConfigManager.kt** - Main facade providing simple 4-method API
-- **Config.kt** - Root configuration data class
-- **Settings.kt** - Settings section with language, theme, interface positioning
-- **Vehicle.kt** - Vehicle section with fuel mode and drive mode
+- **ConfigManager.kt** - Main facade providing comprehensive API with diff utilities
+- **Config.kt** - Flat configuration data class with all fields
 - **OnConfigChangeListener.kt** - Change notification interface
+- **Enum classes** - Language, Theme, FuelMode, DriveMode
+
+### ConfigManager API
+- **Core Methods**: loadConfig, saveConfig, startWatching, stopWatching
+- **Diff Utilities**: isFieldChanged, getFieldValue, isValidConfig
+- **Reflection-based**: Dynamic field access using dot notation paths
+- **Type-safe**: All operations return Result<T> for error handling
 
 ### Demo Application
 - **Separate Project** - Independent voboost-config-demo project in sibling directory
@@ -61,15 +66,12 @@ voboost-config is a complete Android configuration management library that provi
 
 ### Configuration Structure
 ```yaml
-settings:
-  language: "ru"           # Language enum: ru, en
-  theme: "dark"           # Theme enum: auto, light, dark
-  interface-shift-x: 0    # Integer positioning
-  interface-shift-y: 0    # Integer positioning
-
-vehicle:
-  fuel-mode: "electric"   # FuelMode enum: intellectual, electric, fuel, save
-  drive-mode: "sport"     # DriveMode enum: eco, comfort, sport, snow, outing, individual
+settings-language: ru          # Language enum: ru, en
+settings-theme: dark           # Theme enum: auto, light, dark
+settings-interface-shift-x: 0  # Integer positioning
+settings-interface-shift-y: 0  # Integer positioning
+vehicle-fuel-mode: electric    # FuelMode enum: intellectual, electric, fuel, save
+vehicle-drive-mode: sport      # DriveMode enum: eco, comfort, sport, snow, outing, individual
 ```
 
 ### File Watching Implementation
@@ -100,7 +102,7 @@ vehicle:
 ## Files Created
 
 **Library Source**: 7 main source files + enum classes
-**Test Suite**: 9 test files with 33+ test cases
+**Test Suite**: 9 test files with 76+ test cases
 **Demo Application**: Complete Android app with UI
 **Documentation**: README, API docs, memory bank
 **Build Configuration**: Gradle files for multi-module project

@@ -4,8 +4,6 @@ import io.mockk.every
 import org.junit.Test
 import org.junit.Assert.*
 import ru.voboost.config.models.Config
-import ru.voboost.config.models.Settings
-import ru.voboost.config.models.Vehicle
 import ru.voboost.config.models.Language
 import ru.voboost.config.models.Theme
 import ru.voboost.config.models.FuelMode
@@ -16,7 +14,7 @@ import java.nio.file.Files
 /**
  * Integration tests with real YAML file loading for ConfigManager.
  *
- * Tests cover complete YAML->Config pipeline with real file operations.
+ * Tests cover complete YAML->Config pipeline with real file operations using the flattened Config model.
  */
 class IntegrationTest : BaseConfigTest() {
 
@@ -31,15 +29,12 @@ class IntegrationTest : BaseConfigTest() {
 
         // Copy sample_config.yaml content to temp file
         val sampleConfigContent = """
-            settings:
-              language: "en"
-              theme: "dark"
-              interface-shift-x: 0
-              interface-shift-y: 0
-
-            vehicle:
-              fuel-mode: "intellectual"
-              drive-mode: "comfort"
+            settings-language: "en"
+            settings-theme: "dark"
+            settings-interface-shift-x: 0
+            settings-interface-shift-y: 0
+            vehicle-fuel-mode: "intellectual"
+            vehicle-drive-mode: "comfort"
         """.trimIndent()
 
         configFile.writeText(sampleConfigContent)
@@ -54,13 +49,13 @@ class IntegrationTest : BaseConfigTest() {
         val config = result.getOrNull()
         assertNotNull("Config should not be null", config)
 
-        // Verify all fields are loaded correctly
-        assertEquals("Language should be EN", Language.en, config?.settings?.language)
-        assertEquals("Theme should be DARK", Theme.dark, config?.settings?.theme)
-        assertEquals("Interface shift X should be 0", 0, config?.settings?.interfaceShiftX)
-        assertEquals("Interface shift Y should be 0", 0, config?.settings?.interfaceShiftY)
-        assertEquals("Fuel mode should be INTELLECTUAL", FuelMode.intellectual, config?.vehicle?.fuelMode)
-        assertEquals("Drive mode should be COMFORT", DriveMode.comfort, config?.vehicle?.driveMode)
+        // Verify all fields are loaded correctly with flattened structure
+        assertEquals("Language should be EN", Language.en, config?.settingsLanguage)
+        assertEquals("Theme should be DARK", Theme.dark, config?.settingsTheme)
+        assertEquals("Interface shift X should be 0", 0, config?.settingsInterfaceShiftX)
+        assertEquals("Interface shift Y should be 0", 0, config?.settingsInterfaceShiftY)
+        assertEquals("Fuel mode should be INTELLECTUAL", FuelMode.intellectual, config?.vehicleFuelMode)
+        assertEquals("Drive mode should be COMFORT", DriveMode.comfort, config?.vehicleDriveMode)
 
         // Clean up
         tempDir.deleteRecursively()
@@ -75,15 +70,12 @@ class IntegrationTest : BaseConfigTest() {
 
         // Test with different enum values
         val configContent = """
-            settings:
-              language: "ru"
-              theme: "auto"
-              interface-shift-x: 15
-              interface-shift-y: -10
-
-            vehicle:
-              fuel-mode: "electric"
-              drive-mode: "sport"
+            settings-language: "ru"
+            settings-theme: "auto"
+            settings-interface-shift-x: 15
+            settings-interface-shift-y: -10
+            vehicle-fuel-mode: "electric"
+            vehicle-drive-mode: "sport"
         """.trimIndent()
 
         configFile.writeText(configContent)
@@ -96,13 +88,13 @@ class IntegrationTest : BaseConfigTest() {
         val config = result.getOrNull()
         assertNotNull("Config should not be null", config)
 
-        // Verify enum values are correctly parsed
-        assertEquals("Language should be RU", Language.ru, config?.settings?.language)
-        assertEquals("Theme should be AUTO", Theme.auto, config?.settings?.theme)
-        assertEquals("Interface shift X should be 15", 15, config?.settings?.interfaceShiftX)
-        assertEquals("Interface shift Y should be -10", -10, config?.settings?.interfaceShiftY)
-        assertEquals("Fuel mode should be ELECTRIC", FuelMode.electric, config?.vehicle?.fuelMode)
-        assertEquals("Drive mode should be SPORT", DriveMode.sport, config?.vehicle?.driveMode)
+        // Verify enum values are correctly parsed with flattened structure
+        assertEquals("Language should be RU", Language.ru, config?.settingsLanguage)
+        assertEquals("Theme should be AUTO", Theme.auto, config?.settingsTheme)
+        assertEquals("Interface shift X should be 15", 15, config?.settingsInterfaceShiftX)
+        assertEquals("Interface shift Y should be -10", -10, config?.settingsInterfaceShiftY)
+        assertEquals("Fuel mode should be ELECTRIC", FuelMode.electric, config?.vehicleFuelMode)
+        assertEquals("Drive mode should be SPORT", DriveMode.sport, config?.vehicleDriveMode)
 
         tempDir.deleteRecursively()
     }
@@ -115,12 +107,9 @@ class IntegrationTest : BaseConfigTest() {
         val configFile = File(tempDir, "config.yaml")
 
         val configContent = """
-            settings:
-              language: "en"
-              theme: "light"
-
-            vehicle:
-              fuel-mode: "fuel"
+            settings-language: "en"
+            settings-theme: "light"
+            vehicle-fuel-mode: "fuel"
         """.trimIndent()
 
         configFile.writeText(configContent)
@@ -133,15 +122,15 @@ class IntegrationTest : BaseConfigTest() {
         val config = result.getOrNull()
         assertNotNull("Config should not be null", config)
 
-        // Verify set fields
-        assertEquals("Language should be EN", Language.en, config?.settings?.language)
-        assertEquals("Theme should be LIGHT", Theme.light, config?.settings?.theme)
-        assertEquals("Fuel mode should be FUEL", FuelMode.fuel, config?.vehicle?.fuelMode)
+        // Verify set fields with flattened structure
+        assertEquals("Language should be EN", Language.en, config?.settingsLanguage)
+        assertEquals("Theme should be LIGHT", Theme.light, config?.settingsTheme)
+        assertEquals("Fuel mode should be FUEL", FuelMode.fuel, config?.vehicleFuelMode)
 
         // Verify unset fields are null
-        assertNull("Interface shift X should be null", config?.settings?.interfaceShiftX)
-        assertNull("Interface shift Y should be null", config?.settings?.interfaceShiftY)
-        assertNull("Drive mode should be null", config?.vehicle?.driveMode)
+        assertNull("Interface shift X should be null", config?.settingsInterfaceShiftX)
+        assertNull("Interface shift Y should be null", config?.settingsInterfaceShiftY)
+        assertNull("Drive mode should be null", config?.vehicleDriveMode)
 
         tempDir.deleteRecursively()
     }
@@ -154,9 +143,8 @@ class IntegrationTest : BaseConfigTest() {
         val configFile = File(tempDir, "config.yaml")
 
         val configContent = """
-            settings:
-              language: "invalid_language"
-              theme: "dark"
+            settings-language: "invalid_language"
+            settings-theme: "dark"
         """.trimIndent()
 
         configFile.writeText(configContent)
@@ -180,16 +168,12 @@ class IntegrationTest : BaseConfigTest() {
         every { mockContext.filesDir } returns tempDir
 
         val originalConfig = Config(
-            settings = Settings(
-                language = Language.ru,
-                theme = Theme.dark,
-                interfaceShiftX = 25,
-                interfaceShiftY = -5
-            ),
-            vehicle = Vehicle(
-                fuelMode = FuelMode.save,
-                driveMode = DriveMode.individual
-            )
+            settingsLanguage = Language.ru,
+            settingsTheme = Theme.dark,
+            settingsInterfaceShiftX = 25,
+            settingsInterfaceShiftY = -5,
+            vehicleFuelMode = FuelMode.save,
+            vehicleDriveMode = DriveMode.individual
         )
 
         // Save config
@@ -203,13 +187,13 @@ class IntegrationTest : BaseConfigTest() {
         val loadedConfig = loadResult.getOrNull()
         assertNotNull("Loaded config should not be null", loadedConfig)
 
-        // Verify all fields match
-        assertEquals("Language should match", originalConfig.settings?.language, loadedConfig?.settings?.language)
-        assertEquals("Theme should match", originalConfig.settings?.theme, loadedConfig?.settings?.theme)
-        assertEquals("Interface shift X should match", originalConfig.settings?.interfaceShiftX, loadedConfig?.settings?.interfaceShiftX)
-        assertEquals("Interface shift Y should match", originalConfig.settings?.interfaceShiftY, loadedConfig?.settings?.interfaceShiftY)
-        assertEquals("Fuel mode should match", originalConfig.vehicle?.fuelMode, loadedConfig?.vehicle?.fuelMode)
-        assertEquals("Drive mode should match", originalConfig.vehicle?.driveMode, loadedConfig?.vehicle?.driveMode)
+        // Verify all fields match with flattened structure
+        assertEquals("Language should match", originalConfig.settingsLanguage, loadedConfig?.settingsLanguage)
+        assertEquals("Theme should match", originalConfig.settingsTheme, loadedConfig?.settingsTheme)
+        assertEquals("Interface shift X should match", originalConfig.settingsInterfaceShiftX, loadedConfig?.settingsInterfaceShiftX)
+        assertEquals("Interface shift Y should match", originalConfig.settingsInterfaceShiftY, loadedConfig?.settingsInterfaceShiftY)
+        assertEquals("Fuel mode should match", originalConfig.vehicleFuelMode, loadedConfig?.vehicleFuelMode)
+        assertEquals("Drive mode should match", originalConfig.vehicleDriveMode, loadedConfig?.vehicleDriveMode)
 
         tempDir.deleteRecursively()
     }
@@ -232,8 +216,7 @@ class IntegrationTest : BaseConfigTest() {
             val configFile = File(tempDir, "config.yaml")
 
             val configContent = """
-                vehicle:
-                  drive-mode: "$yamlValue"
+                vehicle-drive-mode: "$yamlValue"
             """.trimIndent()
 
             configFile.writeText(configContent)
@@ -245,7 +228,7 @@ class IntegrationTest : BaseConfigTest() {
             assertTrue("Loading should succeed for $yamlValue", result.isSuccess)
             val config = result.getOrNull()
             assertEquals("Drive mode should be $expectedEnum for YAML value $yamlValue",
-                expectedEnum, config?.vehicle?.driveMode)
+                expectedEnum, config?.vehicleDriveMode)
 
             tempDir.deleteRecursively()
         }
@@ -267,8 +250,7 @@ class IntegrationTest : BaseConfigTest() {
             val configFile = File(tempDir, "config.yaml")
 
             val configContent = """
-                vehicle:
-                  fuel-mode: "$yamlValue"
+                vehicle-fuel-mode: "$yamlValue"
             """.trimIndent()
 
             configFile.writeText(configContent)
@@ -280,9 +262,102 @@ class IntegrationTest : BaseConfigTest() {
             assertTrue("Loading should succeed for $yamlValue", result.isSuccess)
             val config = result.getOrNull()
             assertEquals("Fuel mode should be $expectedEnum for YAML value $yamlValue",
-                expectedEnum, config?.vehicle?.fuelMode)
+                expectedEnum, config?.vehicleFuelMode)
 
             tempDir.deleteRecursively()
         }
+    }
+
+    @Test
+    fun testLoadConfig_realYamlFile_allLanguages() {
+        // Test all Language enum values
+
+        val languages = listOf(
+            "en" to Language.en,
+            "ru" to Language.ru
+        )
+
+        languages.forEach { (yamlValue, expectedEnum) ->
+            val tempDir = File(Files.createTempDirectory("language_test_$yamlValue").toString())
+            val configFile = File(tempDir, "config.yaml")
+
+            val configContent = """
+                settings-language: "$yamlValue"
+            """.trimIndent()
+
+            configFile.writeText(configContent)
+
+            every { mockContext.filesDir } returns tempDir
+
+            val result = configManager.loadConfig(mockContext, "config.yaml")
+
+            assertTrue("Loading should succeed for $yamlValue", result.isSuccess)
+            val config = result.getOrNull()
+            assertEquals("Language should be $expectedEnum for YAML value $yamlValue",
+                expectedEnum, config?.settingsLanguage)
+
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun testLoadConfig_realYamlFile_allThemes() {
+        // Test all Theme enum values
+
+        val themes = listOf(
+            "auto" to Theme.auto,
+            "light" to Theme.light,
+            "dark" to Theme.dark
+        )
+
+        themes.forEach { (yamlValue, expectedEnum) ->
+            val tempDir = File(Files.createTempDirectory("theme_test_$yamlValue").toString())
+            val configFile = File(tempDir, "config.yaml")
+
+            val configContent = """
+                settings-theme: "$yamlValue"
+            """.trimIndent()
+
+            configFile.writeText(configContent)
+
+            every { mockContext.filesDir } returns tempDir
+
+            val result = configManager.loadConfig(mockContext, "config.yaml")
+
+            assertTrue("Loading should succeed for $yamlValue", result.isSuccess)
+            val config = result.getOrNull()
+            assertEquals("Theme should be $expectedEnum for YAML value $yamlValue",
+                expectedEnum, config?.settingsTheme)
+
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun testLoadConfig_realYamlFile_interfaceShifts() {
+        // Test interface shift values (positive, negative, zero)
+
+        val tempDir = File(Files.createTempDirectory("interface_shift_test").toString())
+        val configFile = File(tempDir, "config.yaml")
+
+        val configContent = """
+            settings-interface-shift-x: 100
+            settings-interface-shift-y: -50
+        """.trimIndent()
+
+        configFile.writeText(configContent)
+
+        every { mockContext.filesDir } returns tempDir
+
+        val result = configManager.loadConfig(mockContext, "config.yaml")
+
+        assertTrue("Loading should succeed", result.isSuccess)
+        val config = result.getOrNull()
+        assertNotNull("Config should not be null", config)
+
+        assertEquals("Interface shift X should be 100", 100, config?.settingsInterfaceShiftX)
+        assertEquals("Interface shift Y should be -50", -50, config?.settingsInterfaceShiftY)
+
+        tempDir.deleteRecursively()
     }
 }
