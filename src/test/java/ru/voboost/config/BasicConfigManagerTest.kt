@@ -7,14 +7,22 @@ import org.junit.Test
 /**
  * Basic functionality tests for ConfigManager.
  *
- * Tests cover basic instantiation and simple operations.
+ * Tests cover basic instance functionality and simple operations.
  */
 class BasicConfigManagerTest : BaseConfigTest() {
     @Test
-    fun testConfigManager_initialization() {
-        // Test that ConfigManager can be instantiated
-        val manager = ConfigManager()
-        assertNotNull("ConfigManager should be instantiated", manager)
+    fun testConfigManager_instanceCreation() {
+        // Test that ConfigManager instance can be created and accessed
+        val manager = getConfigManagerInstance()
+        assertNotNull("ConfigManager instance should be accessible", manager)
+    }
+
+    @Test
+    fun testConfigManager_instanceIndependence() {
+        // Test that different instances are independent
+        val manager1 = getConfigManagerInstance()
+        val manager2 = ConfigManager(mockContext, "another-config.yaml")
+        assertTrue("ConfigManager instances should be independent", manager1 !== manager2)
     }
 
     @Test

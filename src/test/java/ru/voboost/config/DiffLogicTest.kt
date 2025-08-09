@@ -24,7 +24,7 @@ class DiffLogicTest : BaseConfigTest() {
                 settingsTheme = Theme.dark,
                 settingsInterfaceShiftX = 10,
                 settingsInterfaceShiftY = 20,
-                vehicleFuelMode = FuelMode.intellectual,
+                vehicleFuelMode = FuelMode.electric,
                 vehicleDriveMode = DriveMode.comfort
             )
         val config2 =
@@ -33,7 +33,7 @@ class DiffLogicTest : BaseConfigTest() {
                 settingsTheme = Theme.dark,
                 settingsInterfaceShiftX = 10,
                 settingsInterfaceShiftY = 20,
-                vehicleFuelMode = FuelMode.intellectual,
+                vehicleFuelMode = FuelMode.electric,
                 vehicleDriveMode = DriveMode.comfort
             )
 
@@ -54,7 +54,7 @@ class DiffLogicTest : BaseConfigTest() {
             Config(
                 settingsLanguage = Language.en,
                 settingsTheme = Theme.dark,
-                vehicleFuelMode = FuelMode.intellectual,
+                vehicleFuelMode = FuelMode.electric,
                 vehicleDriveMode = DriveMode.comfort
             )
         val newConfig =
@@ -62,7 +62,7 @@ class DiffLogicTest : BaseConfigTest() {
                 // Only this field changed
                 settingsLanguage = Language.ru,
                 settingsTheme = Theme.dark,
-                vehicleFuelMode = FuelMode.intellectual,
+                vehicleFuelMode = FuelMode.electric,
                 vehicleDriveMode = DriveMode.comfort
             )
 
@@ -85,7 +85,7 @@ class DiffLogicTest : BaseConfigTest() {
                 settingsTheme = Theme.dark,
                 settingsInterfaceShiftX = 10,
                 settingsInterfaceShiftY = 5,
-                vehicleFuelMode = FuelMode.intellectual,
+                vehicleFuelMode = FuelMode.electric,
                 vehicleDriveMode = DriveMode.comfort
             )
         val newConfig =
@@ -99,7 +99,7 @@ class DiffLogicTest : BaseConfigTest() {
                 // Changed
                 settingsInterfaceShiftY = 15,
                 // Changed
-                vehicleFuelMode = FuelMode.electric,
+                vehicleFuelMode = FuelMode.hybrid,
                 // Same
                 vehicleDriveMode = DriveMode.comfort
             )
@@ -111,7 +111,7 @@ class DiffLogicTest : BaseConfigTest() {
         assertEquals("Theme should be changed", Theme.light, diff.settingsTheme)
         assertNull("Interface shift X should be null (unchanged)", diff.settingsInterfaceShiftX)
         assertEquals("Interface shift Y should be changed", 15, diff.settingsInterfaceShiftY)
-        assertEquals("Fuel mode should be changed", FuelMode.electric, diff.vehicleFuelMode)
+        assertEquals("Fuel mode should be changed", FuelMode.hybrid, diff.vehicleFuelMode)
         assertNull("Drive mode should be null (unchanged)", diff.vehicleDriveMode)
     }
 
@@ -128,7 +128,7 @@ class DiffLogicTest : BaseConfigTest() {
                 // Int
                 settingsInterfaceShiftY = 5,
                 // Enum
-                vehicleFuelMode = FuelMode.intellectual,
+                vehicleFuelMode = FuelMode.electric,
                 // Enum
                 vehicleDriveMode = DriveMode.eco
             )
@@ -143,7 +143,7 @@ class DiffLogicTest : BaseConfigTest() {
                 // Int changed
                 settingsInterfaceShiftY = 15,
                 // Enum changed
-                vehicleFuelMode = FuelMode.electric,
+                vehicleFuelMode = FuelMode.hybrid,
                 // Enum changed
                 vehicleDriveMode = DriveMode.sport
             )
@@ -155,7 +155,7 @@ class DiffLogicTest : BaseConfigTest() {
         assertEquals("Theme enum should be handled", Theme.light, diff.settingsTheme)
         assertEquals("Interface shift X int should be handled", 20, diff.settingsInterfaceShiftX)
         assertEquals("Interface shift Y int should be handled", 15, diff.settingsInterfaceShiftY)
-        assertEquals("Fuel mode enum should be handled", FuelMode.electric, diff.vehicleFuelMode)
+        assertEquals("Fuel mode enum should be handled", FuelMode.hybrid, diff.vehicleFuelMode)
         assertEquals("Drive mode enum should be handled", DriveMode.sport, diff.vehicleDriveMode)
     }
 
@@ -169,7 +169,7 @@ class DiffLogicTest : BaseConfigTest() {
                 settingsLanguage = Language.en,
                 settingsTheme = Theme.dark,
                 settingsInterfaceShiftX = 10,
-                vehicleFuelMode = FuelMode.intellectual,
+                vehicleFuelMode = FuelMode.electric,
                 vehicleDriveMode = DriveMode.comfort
             )
 
@@ -184,7 +184,7 @@ class DiffLogicTest : BaseConfigTest() {
                 // New field (null -> value)
                 settingsInterfaceShiftY = 5,
                 // Same
-                vehicleFuelMode = FuelMode.intellectual,
+                vehicleFuelMode = FuelMode.electric,
                 // Changed
                 vehicleDriveMode = DriveMode.sport
             )
@@ -208,7 +208,7 @@ class DiffLogicTest : BaseConfigTest() {
                 settingsLanguage = Language.en,
                 settingsTheme = Theme.dark,
                 settingsInterfaceShiftX = 10,
-                vehicleFuelMode = FuelMode.intellectual,
+                vehicleFuelMode = FuelMode.electric,
                 vehicleDriveMode = DriveMode.comfort
             )
 
@@ -217,7 +217,7 @@ class DiffLogicTest : BaseConfigTest() {
                 settingsLanguage = Language.en,
                 settingsTheme = Theme.dark,
                 settingsInterfaceShiftX = 10,
-                vehicleFuelMode = FuelMode.intellectual,
+                vehicleFuelMode = FuelMode.electric,
                 vehicleDriveMode = DriveMode.comfort
             )
 
@@ -239,7 +239,7 @@ class DiffLogicTest : BaseConfigTest() {
             Config(
                 settingsLanguage = null,
                 settingsTheme = Theme.dark,
-                vehicleFuelMode = FuelMode.intellectual
+                vehicleFuelMode = FuelMode.electric
             )
 
         val newConfig =
@@ -249,7 +249,7 @@ class DiffLogicTest : BaseConfigTest() {
                 // unchanged
                 settingsTheme = Theme.dark,
                 // unchanged
-                vehicleFuelMode = FuelMode.intellectual
+                vehicleFuelMode = FuelMode.electric
             )
 
         val diff = createDiffViaReflection(oldConfig, newConfig)
@@ -269,7 +269,7 @@ class DiffLogicTest : BaseConfigTest() {
             Config(
                 settingsLanguage = Language.en,
                 settingsTheme = Theme.dark,
-                vehicleFuelMode = FuelMode.intellectual
+                vehicleFuelMode = FuelMode.electric
             )
 
         val newConfig =
@@ -279,7 +279,7 @@ class DiffLogicTest : BaseConfigTest() {
                 // unchanged
                 settingsTheme = Theme.dark,
                 // unchanged
-                vehicleFuelMode = FuelMode.intellectual
+                vehicleFuelMode = FuelMode.electric
             )
 
         val diff = createDiffViaReflection(oldConfig, newConfig)
@@ -299,8 +299,8 @@ class DiffLogicTest : BaseConfigTest() {
         val oldConfig =
             Config(
                 settingsLanguage = Language.en,
-                settingsTheme = Theme.auto,
-                vehicleFuelMode = FuelMode.intellectual,
+                settingsTheme = Theme.light,
+                vehicleFuelMode = FuelMode.electric,
                 vehicleDriveMode = DriveMode.eco
             )
 
@@ -308,7 +308,7 @@ class DiffLogicTest : BaseConfigTest() {
             Config(
                 settingsLanguage = Language.ru,
                 settingsTheme = Theme.dark,
-                vehicleFuelMode = FuelMode.electric,
+                vehicleFuelMode = FuelMode.hybrid,
                 vehicleDriveMode = DriveMode.sport
             )
 
@@ -317,7 +317,7 @@ class DiffLogicTest : BaseConfigTest() {
         // All enum fields should be in diff
         assertEquals("Language change should be detected", Language.ru, diff.settingsLanguage)
         assertEquals("Theme change should be detected", Theme.dark, diff.settingsTheme)
-        assertEquals("Fuel mode change should be detected", FuelMode.electric, diff.vehicleFuelMode)
+        assertEquals("Fuel mode change should be detected", FuelMode.hybrid, diff.vehicleFuelMode)
         assertEquals("Drive mode change should be detected", DriveMode.sport, diff.vehicleDriveMode)
 
         // Non-changed fields should be null

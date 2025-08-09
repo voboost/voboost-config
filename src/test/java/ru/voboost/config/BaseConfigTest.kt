@@ -14,6 +14,7 @@ import java.io.File
  *
  * Provides shared mock objects and utility methods for all test classes.
  * Uses MockK for mocking Android Context.
+ * Works with instance-based ConfigManager pattern.
  */
 abstract class BaseConfigTest {
     protected lateinit var mockContext: Context
@@ -24,17 +25,28 @@ abstract class BaseConfigTest {
     fun setUp() {
         mockContext = mockk()
         mockFilesDir = mockk()
-        configManager = ConfigManager()
 
-        every { mockContext.filesDir } returns mockFilesDir
-        every { mockFilesDir.toString() } returns "/mock/files"
+        every { mockContext.dataDir } returns mockFilesDir
+        every { mockFilesDir.toString() } returns "/mock/data"
         every { mockFilesDir.absolutePath } returns "/mock/files"
         every { mockFilesDir.path } returns "/mock/files"
+
+        // Create ConfigManager instance for testing
+        configManager = ConfigManager(mockContext, "test-config.yaml")
     }
 
     @After
     fun tearDown() {
+        // Clean up after each test
+        configManager.stopWatching()
         unmockkAll()
+    }
+
+    /**
+     * Helper method to get ConfigManager instance for tests
+     */
+    protected fun getConfigManagerInstance(): ConfigManager {
+        return configManager
     }
 
     /**

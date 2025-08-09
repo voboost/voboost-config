@@ -68,22 +68,22 @@ class ConfigModelTest : BaseConfigTest() {
         val config1 =
             Config(
                 settingsLanguage = Language.en,
-                settingsTheme = Theme.auto,
-                vehicleFuelMode = FuelMode.intellectual
+                settingsTheme = Theme.light,
+                vehicleFuelMode = FuelMode.electric
             )
 
         val config2 =
             Config(
                 settingsLanguage = Language.en,
-                settingsTheme = Theme.auto,
-                vehicleFuelMode = FuelMode.intellectual
+                settingsTheme = Theme.light,
+                vehicleFuelMode = FuelMode.electric
             )
 
         val config3 =
             Config(
                 settingsLanguage = Language.ru,
-                settingsTheme = Theme.auto,
-                vehicleFuelMode = FuelMode.intellectual
+                settingsTheme = Theme.light,
+                vehicleFuelMode = FuelMode.electric
             )
 
         assertEquals("Configs with same values should be equal", config1, config2)
@@ -118,16 +118,14 @@ class ConfigModelTest : BaseConfigTest() {
         assertTrue("Language should contain en", Language.values().contains(Language.en))
 
         // Test Theme enum
-        assertEquals("Theme enum should have correct values", 3, Theme.values().size)
-        assertTrue("Theme should contain auto", Theme.values().contains(Theme.auto))
+        assertEquals("Theme enum should have correct values", 2, Theme.values().size)
         assertTrue("Theme should contain light", Theme.values().contains(Theme.light))
         assertTrue("Theme should contain dark", Theme.values().contains(Theme.dark))
 
         // Test FuelMode enum
-        assertEquals("FuelMode enum should have correct values", 4, FuelMode.values().size)
-        assertTrue("FuelMode should contain intellectual", FuelMode.values().contains(FuelMode.intellectual))
+        assertEquals("FuelMode enum should have correct values", 3, FuelMode.values().size)
         assertTrue("FuelMode should contain electric", FuelMode.values().contains(FuelMode.electric))
-        assertTrue("FuelMode should contain fuel", FuelMode.values().contains(FuelMode.fuel))
+        assertTrue("FuelMode should contain hybrid", FuelMode.values().contains(FuelMode.hybrid))
         assertTrue("FuelMode should contain save", FuelMode.values().contains(FuelMode.save))
 
         // Test DriveMode enum

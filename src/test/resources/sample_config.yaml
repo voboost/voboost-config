@@ -5,5 +5,5 @@ settings:
   interface-shift-y: 0
 
 vehicle:
-  fuel-mode: intellectual
+  fuel-mode: electric
   drive-mode: comfort

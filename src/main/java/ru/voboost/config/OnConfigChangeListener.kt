@@ -26,7 +26,7 @@ import ru.voboost.config.models.Config
  *     }
  * }
  *
- * configManager.startWatching(context, "config.yaml", listener)
+ * configManager.startWatching(listener)
  * ```
  *
  * ## Threading Considerations

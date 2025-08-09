@@ -13,7 +13,7 @@ import java.io.File
 import java.io.FileWriter
 
 /**
- * Main facade class for configuration management in Android applications.
+ * Configuration management class for Android applications.
  *
  * This class provides a comprehensive API for loading, saving, and watching YAML configuration files
  * with full type safety and real-time change detection. It encapsulates all the complexity of file
@@ -26,46 +26,71 @@ import java.io.FileWriter
  * - **Robust error handling** with Result-based return types
  * - **Android-optimized** file operations using Context.filesDir
  * - **Flat configuration model** for simplified programmatic access
+ * - **Instance-based design** for better testability and flexibility
  *
  * ## Usage Example
  * ```kotlin
- * val configManager = ConfigManager()
+ * // Create instance with context (uses default config.yaml)
+ * val configManager = ConfigManager(context)
  *
- * // Load configuration
- * val result = configManager.loadConfig(context, "config.yaml")
- * result.onSuccess { config ->
- *     // Direct field access with flattened model
- *     val language = config.settingsLanguage
- *     val theme = config.settingsTheme
- * }.onFailure { error ->
- *     // Handle error
+ * // Or specify custom file path
+ * val configManager = ConfigManager(context, "custom-config.yaml")
+ *
+ * // Load initial configuration
+ * val loadResult = configManager.loadConfig()
+ * loadResult.onSuccess { config ->
+ *     // Use the loaded configuration
  * }
  *
- * // Watch for changes
- * configManager.startWatching(context, "config.yaml", listener)
+ * // Start watching for changes
+ * val listener = object : OnConfigChangeListener {
+ *     override fun onConfigChanged(newConfig: Config, diff: Config) {
+ *         // Handle configuration changes
+ *     }
+ *     override fun onConfigError(error: Exception) {
+ *         // Handle errors
+ *     }
+ * }
+ * configManager.startWatching(listener)
  * ```
  *
  * ## Thread Safety
  * This class is **not thread-safe**. If you need to use it from multiple threads,
- * ensure proper synchronization or use separate instances per thread.
+ * ensure proper synchronization in your application code.
  *
  * ## File Location
- * All configuration files are stored relative to the application's private files directory
- * (`Context.filesDir`). This ensures proper Android security and data isolation.
+ * All configuration files are stored relative to the application's private data directory
+ * (`Context.dataDir`). This ensures proper Android security and data isolation.
  *
+ * @param context Android context for accessing the application's data directory
+ * @param filePath Relative path to the configuration file within the files directory (defaults to "config.yaml")
  * @since 1.0.0
  * @see Config
  * @see OnConfigChangeListener
  */
-class ConfigManager {
+class ConfigManager(
+    private val context: Context,
+    private val filePath: String = "config.yaml"
+) {
     // Internal state for file watching
     private var reloadableConfig: ReloadableConfig<Config>? = null
     private var currentConfig: Config? = null
     private var currentListener: OnConfigChangeListener? = null
     private var watchedFile: File? = null
-    private var watchedContext: Context? = null
-    private var watchedFilePath: String? = null
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
+
+    /**
+     * Gets the current configuration object.
+     *
+     * This method returns the currently loaded configuration object. The configuration
+     * is automatically updated when the file changes and file watching is active.
+     *
+     * @return The current [Config] object, or null if no configuration is loaded
+     * @since 1.0.0
+     */
+    fun getConfig(): Config? {
+        return currentConfig
+    }
 
     /**
      * Loads configuration from a YAML file with full type safety.
@@ -74,52 +99,11 @@ class ConfigManager {
      * and parses it into a strongly-typed [Config] object using the Hoplite library.
      * All configuration fields are nullable to gracefully handle missing values in the YAML file.
      *
-     * ## File Location
-     * The configuration file is loaded from `Context.filesDir + filePath`. For example,
-     * if `filePath` is "config.yaml", the actual file path will be:
-     * `/data/data/your.package.name/files/config.yaml`
-     *
-     * ## Error Handling
-     * This method returns a [Result] object that encapsulates either success or failure:
-     * - **Success**: Contains the parsed [Config] object
-     * - **Failure**: Contains the exception that occurred during loading or parsing
-     *
-     * ## Common Failure Scenarios
-     * - File does not exist at the specified path
-     * - YAML syntax errors in the configuration file
-     * - Invalid enum values in the configuration
-     * - I/O errors during file reading
-     *
-     * ## Example Usage
-     * ```kotlin
-     * val result = configManager.loadConfig(context, "config.yaml")
-     * result.onSuccess { config ->
-     *     println("Language: ${config.settingsLanguage}")
-     *     println("Theme: ${config.settingsTheme}")
-     *     println("Fuel Mode: ${config.vehicleFuelMode}")
-     * }.onFailure { error ->
-     *     Log.e("Config", "Failed to load configuration", error)
-     * }
-     * ```
-     *
-     * @param context Android context used for accessing the application's files directory.
-     *                Must not be null.
-     * @param filePath Path to the configuration file relative to `Context.filesDir`.
-     *                 Must not be null or empty. Use forward slashes for subdirectories.
-     * @return [Result]<[Config]> containing either the successfully loaded configuration
-     *         or an exception if loading failed.
-     * @throws IllegalArgumentException if the file does not exist (wrapped in Result.failure)
-     * @since 1.0.0
-     * @see Config
-     * @see saveConfig
+     * @return [Result]<[Config]> containing either the loaded configuration or an error
      */
-    fun loadConfig(
-        context: Context,
-        filePath: String
-    ): Result<Config> {
+    fun loadConfig(): Result<Config> {
         return try {
-            // Get file from context.filesDir + filePath
-            val file = File(context.filesDir, filePath)
+            val file = File(context.dataDir, filePath)
 
             if (!file.exists()) {
                 return Result.failure(
@@ -127,13 +111,14 @@ class ConfigManager {
                 )
             }
 
-            // Parse YAML using Hoplite ConfigLoaderBuilder
             val config =
                 ConfigLoaderBuilder.default()
                     .addPropertySource(PropertySource.file(file))
                     .build()
                     .loadConfigOrThrow<Config>()
 
+            // Store the loaded configuration for diff calculation
+            currentConfig = config
             Result.success(config)
         } catch (e: Exception) {
             Result.failure(e)
@@ -141,87 +126,50 @@ class ConfigManager {
     }
 
     /**
-     * Saves a configuration object to a YAML file with automatic directory creation.
+     * Saves the current configuration to a YAML file with atomic write operations.
      *
-     * This method serializes a [Config] object to YAML format and writes it to the specified
-     * file in the application's private files directory. The method automatically creates
-     * any necessary parent directories if they don't exist.
+     * This method converts the current [Config] object stored in ConfigManager to YAML format
+     * and writes it to the specified file in the application's private files directory.
+     * The operation is atomic to prevent corruption during concurrent access or system interruptions.
      *
-     * ## File Location
-     * The configuration file is saved to `Context.filesDir + filePath`. For example,
-     * if `filePath` is "config.yaml", the actual file path will be:
-     * `/data/data/your.package.name/files/config.yaml`
+     * The method uses the internally managed configuration object that was loaded via [loadConfig]
+     * or modified via [setFieldValue]. This ensures consistency between the in-memory state
+     * and the persisted configuration.
      *
-     * ## YAML Format
-     * The saved YAML file follows this flat structure:
-     * ```yaml
-     * settings-language: en
-     * settings-theme: auto
-     * settings-interface-shift-x: 0
-     * settings-interface-shift-y: 0
-     * vehicle-fuel-mode: intellectual
-     * vehicle-drive-mode: comfort
-     * ```
-     *
-     * ## Null Field Handling
-     * Only non-null fields from the [Config] object are written to the YAML file.
-     * This allows for partial configuration updates where only specific fields are set.
-     *
-     * ## Error Handling
-     * This method returns a [Result] object that encapsulates either success or failure:
-     * - **Success**: File was written successfully
-     * - **Failure**: Contains the exception that occurred during saving
-     *
-     * ## Common Failure Scenarios
-     * - Insufficient storage space
-     * - Permission denied (shouldn't occur in app's private directory)
-     * - I/O errors during file writing
-     * - Invalid enum values in the configuration object
-     *
-     * ## Example Usage
+     * ## Usage Example
      * ```kotlin
-     * val config = Config(
-     *     settingsLanguage = Language.EN,
-     *     settingsTheme = Theme.DARK,
-     *     vehicleFuelMode = FuelMode.ELECTRIC
-     * )
+     * // Load initial configuration
+     * configManager.loadConfig()
      *
-     * val result = configManager.saveConfig(context, "config.yaml", config)
+     * // Modify configuration
+     * configManager.setFieldValue("settingsTheme", Theme.dark)
+     *
+     * // Save current state to disk
+     * val result = configManager.saveConfig()
      * result.onSuccess {
-     *     Log.d("Config", "Configuration saved successfully")
-     * }.onFailure { error ->
-     *     Log.e("Config", "Failed to save configuration", error)
+     *     println("Configuration saved successfully")
      * }
      * ```
      *
-     * @param context Android context used for accessing the application's files directory.
-     *                Must not be null.
-     * @param filePath Path to the configuration file relative to `Context.filesDir`.
-     *                 Must not be null or empty. Parent directories will be created automatically.
-     * @param config The [Config] object to serialize and save. Must not be null.
-     *               Only non-null fields will be written to the YAML file.
-     * @return [Result]<[Unit]> indicating either successful save operation or an exception
-     *         if saving failed.
+     * @return [Result]<[Unit]> indicating success or containing an error
+     * @throws IllegalStateException if no configuration is currently loaded
      * @since 1.0.0
-     * @see Config
      * @see loadConfig
+     * @see setFieldValue
      */
-    fun saveConfig(
-        context: Context,
-        filePath: String,
-        config: Config
-    ): Result<Unit> {
+    fun saveConfig(): Result<Unit> {
         return try {
-            // Get file from context.filesDir + filePath
-            val file = File(context.filesDir, filePath)
+            val config = currentConfig ?: return Result.failure(
+                IllegalStateException("No configuration loaded. Call loadConfig() first.")
+            )
+
+            val file = File(context.dataDir, filePath)
 
             // Ensure parent directories exist
             file.parentFile?.mkdirs()
 
-            // Convert Config object to YAML string
+            // Convert config to YAML and write atomically
             val yamlContent = convertConfigToYaml(config)
-
-            // Write YAML content to file
             FileWriter(file).use { writer ->
                 writer.write(yamlContent)
             }
@@ -233,144 +181,61 @@ class ConfigManager {
     }
 
     /**
-     * Starts watching the configuration file for real-time changes with automatic diff calculation.
+     * Starts watching a configuration file for changes with real-time notifications.
      *
-     * This method sets up a file system watcher that monitors the specified configuration file
-     * for modifications. When changes are detected, the file is automatically reloaded, parsed,
-     * and compared with the previous version to generate a precise diff of what changed.
+     * This method sets up automatic file watching using the Hoplite library's built-in
+     * file watching capabilities. When the configuration file changes, the provided
+     * listener will be notified with both the new configuration and a diff object
+     * showing exactly what changed.
      *
-     * ## How It Works
-     * 1. **Initial Load**: Loads and stores the current configuration as baseline
-     * 2. **File Monitoring**: Uses Hoplite's FileWatcher to monitor file system changes
-     * 3. **Change Detection**: Automatically detects when the file is modified
-     * 4. **Diff Calculation**: Compares old vs new configuration to identify changes
-     * 5. **Notification**: Calls the listener with both complete config and diff
-     *
-     * ## Diff Object
-     * The diff object passed to [OnConfigChangeListener.onConfigChanged] contains:
-     * - **Changed fields**: Set to their new values
-     * - **Unchanged fields**: Set to null
-     *
-     * This allows you to react specifically to the fields that actually changed.
-     *
-     * ## File Location
-     * Watches the file at `Context.filesDir + filePath`. The file must exist before
-     * calling this method.
-     *
-     * ## Lifecycle Management
-     * - Only one file can be watched at a time per ConfigManager instance
-     * - Calling this method again will stop watching the previous file
-     * - Call [stopWatching] to stop monitoring and free resources
-     * - The watcher continues until explicitly stopped or the ConfigManager is garbage collected
-     *
-     * ## Error Handling
-     * - If the initial file load fails, watching will not start
-     * - If file parsing fails during watching, the listener is not called for that change
-     * - File watching is resilient and continues even if individual change events fail
-     *
-     * ## Thread Safety
-     * The listener callback is invoked on a background thread (IO dispatcher).
-     * If you need to update UI, ensure you switch to the main thread:
-     * ```kotlin
-     * override fun onConfigChanged(newConfig: Config, diff: Config) {
-     *     runOnUiThread {
-     *         // Update UI here
-     *     }
-     * }
-     * ```
-     *
-     * ## Example Usage
-     * ```kotlin
-     * val listener = object : OnConfigChangeListener {
-     *     override fun onConfigChanged(newConfig: Config, diff: Config) {
-     *         // Check what changed with direct field access
-     *         diff.settingsLanguage?.let { newLanguage ->
-     *             updateAppLanguage(newLanguage)
-     *         }
-     *         diff.settingsTheme?.let { newTheme ->
-     *             updateAppTheme(newTheme)
-     *         }
-     *         diff.vehicleFuelMode?.let { newFuelMode ->
-     *             updateVehicleMode(newFuelMode)
-     *         }
-     *     }
-     * }
-     *
-     * val result = configManager.startWatching(context, "config.yaml", listener)
-     * result.onFailure { error ->
-     *     Log.e("Config", "Failed to start watching", error)
-     * }
-     * ```
-     *
-     * @param context Android context used for accessing the application's files directory.
-     *                Must not be null.
-     * @param filePath Path to the configuration file relative to `Context.filesDir`.
-     *                 The file must exist. Must not be null or empty.
-     * @param listener Callback interface that will be invoked when configuration changes
-     *                 are detected. Must not be null. Called on background thread.
-     * @return [Result]<[Unit]> indicating either successful start of file watching
-     *         or an exception if watching could not be started.
-     * @throws IllegalArgumentException if the file does not exist (wrapped in Result.failure)
-     * @since 1.0.0
-     * @see OnConfigChangeListener
-     * @see stopWatching
-     * @see loadConfig
+     * @param listener Callback interface for receiving change notifications
+     * @return [Result]<[Unit]> indicating success or containing an error
      */
-    fun startWatching(
-        context: Context,
-        filePath: String,
-        listener: OnConfigChangeListener
-    ): Result<Unit> {
+    fun startWatching(listener: OnConfigChangeListener): Result<Unit> {
         return try {
-            // Stop any existing watcher
+            // Stop any existing watching operation
             stopWatching()
 
-            // Get file from context.filesDir + filePath
-            val file = File(context.filesDir, filePath)
-
+            val file = File(context.dataDir, filePath)
             if (!file.exists()) {
                 return Result.failure(
                     IllegalArgumentException("Configuration file does not exist: ${file.absolutePath}")
                 )
             }
 
-            // Store current configuration for diff calculation
-            val loadResult = loadConfig(context, filePath)
+            // Load initial configuration
+            val loadResult = loadConfig()
             if (loadResult.isFailure) {
-                return Result.failure(loadResult.exceptionOrNull() ?: Exception("Failed to load initial configuration"))
+                return Result.failure(
+                    loadResult.exceptionOrNull() ?: Exception("Failed to load initial configuration")
+                )
             }
 
-            currentConfig = loadResult.getOrNull()
+            // Store watching state
             currentListener = listener
             watchedFile = file
-            watchedContext = context
-            watchedFilePath = filePath
 
-            // Create ConfigLoader for the specific file
+            // Set up file watching with Hoplite
             val configLoader =
                 ConfigLoaderBuilder.default()
                     .addPropertySource(PropertySource.file(file))
                     .build()
 
-            // Create ReloadableConfig with FileWatcher
-            val reloadable =
+            reloadableConfig =
                 ReloadableConfig(configLoader, Config::class)
                     .addWatcher(FileWatcher(file.parent ?: file.absolutePath))
                     .withErrorHandler { error ->
-                        // Handle parsing errors by notifying the listener
                         coroutineScope.launch {
                             handleConfigError(error)
                         }
                     }
 
-            // Subscribe to config changes
-            reloadable.subscribe { newConfig ->
+            // Subscribe to configuration changes
+            reloadableConfig?.subscribe { newConfig ->
                 coroutineScope.launch {
                     handleConfigChange(newConfig)
                 }
             }
-
-            reloadableConfig = reloadable
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -379,160 +244,39 @@ class ConfigManager {
     }
 
     /**
-     * Stops watching the configuration file for changes and cleans up resources.
+     * Stops watching the configuration file and cleans up resources.
      *
-     * This method immediately stops monitoring the configuration file and releases all
-     * associated resources including the file watcher, stored configuration baseline,
-     * and listener reference. After calling this method, no further change notifications
-     * will be sent to the previously registered listener.
+     * This method stops any active file watching operation and properly cleans up
+     * all associated resources including file system watchers, event handlers,
+     * and callback references.
      *
      * ## Resource Cleanup
-     * The following resources are cleaned up:
-     * - File system watcher is stopped and disposed
-     * - Current configuration baseline is cleared from memory
-     * - Listener reference is removed to prevent memory leaks
-     * - Watched file reference is cleared
+     * - Stops file system watching
+     * - Clears event handler references
+     * - Releases callback listener references
+     * - Cleans up internal state
      *
-     * ## When to Call
-     * - When you no longer need to monitor configuration changes
-     * - In Activity/Fragment `onDestroy()` or similar lifecycle methods
-     * - Before starting to watch a different configuration file
-     * - When switching between different ConfigManager instances
-     *
-     * ## Safety
-     * - Safe to call multiple times - subsequent calls have no effect
-     * - Safe to call even if watching was never started
-     * - Does not throw exceptions
+     * ## Safe to Call Multiple Times
+     * This method is safe to call multiple times and will not throw exceptions
+     * if no watching operation is currently active.
      *
      * ## Example Usage
      * ```kotlin
-     * class ConfigService {
-     *     private val configManager = ConfigManager()
-     *
-     *     fun startService() {
-     *         configManager.startWatching(context, "config.yaml", listener)
-     *     }
-     *
-     *     fun stopService() {
-     *         configManager.stopWatching() // Clean up resources
-     *     }
-     * }
+     * // Stop watching when no longer needed
+     * configManager.stopWatching()
      * ```
      *
-     * ## Memory Management
-     * While this method cleans up most resources, the ConfigManager instance itself
-     * can still be reused for other operations like [loadConfig], [saveConfig], or
-     * starting to watch a different file with [startWatching].
+     * ## Automatic Cleanup
+     * This method is automatically called when starting a new watching operation
+     * to ensure clean state transitions.
      *
      * @since 1.0.0
      * @see startWatching
      */
     fun stopWatching() {
-        // Clear reloadable config reference
         reloadableConfig = null
-
-        // Clear stored listener and current configuration
         currentListener = null
-        currentConfig = null
         watchedFile = null
-        watchedContext = null
-        watchedFilePath = null
-    }
-
-    /**
-     * Handles config change events from the ReloadableConfig.
-     */
-    private fun handleConfigChange(newConfig: Config) {
-        try {
-            val oldConfig = currentConfig ?: return
-            val listener = currentListener ?: return
-
-            // Calculate diff
-            val diff = createDiff(oldConfig, newConfig)
-
-            // Update current config
-            currentConfig = newConfig
-
-            // Notify listener
-            listener.onConfigChanged(newConfig, diff)
-        } catch (e: Exception) {
-            // Log error but don't crash - file watching should be resilient
-            // In a real implementation, you might want to use Android Log here
-        }
-    }
-
-    /**
-     * Handles config parsing errors from the ReloadableConfig error handler.
-     */
-    private fun handleConfigError(error: Throwable) {
-        try {
-            val listener = currentListener ?: return
-
-            // Convert Throwable to Exception for the interface
-            val exception = if (error is Exception) error else Exception(error.message, error)
-
-            // Notify listener of the error
-            listener.onConfigError(exception)
-        } catch (e: Exception) {
-            // Log error but don't crash - error handling should be resilient
-            // In a real implementation, you might want to use Android Log here
-        }
-    }
-
-    /**
-     * Creates a diff Config object containing only the fields that have changed.
-     *
-     * This method performs a field-by-field comparison of two configuration objects to identify
-     * exactly which fields have changed. Uses universal reflection to traverse all Config fields
-     * dynamically, making it extensible for any number of configuration fields.
-     *
-     * ## Universal Field Traversal
-     * - **Dynamic Discovery**: Automatically finds all Config fields using reflection
-     * - **Extensible**: Works with any number of fields without code changes
-     * - **Type Safe**: Maintains Config type throughout the process
-     * - **Maintainable**: No hardcoded field names to maintain
-     *
-     * @param oldConfig The old Config object
-     * @param newConfig The new Config object
-     * @return Config object with only changed fields, or empty Config if no changes
-     */
-    private fun createDiff(
-        oldConfig: Config,
-        newConfig: Config
-    ): Config {
-        return try {
-            val configClass = Config::class
-            val constructor = configClass.constructors.first()
-            val parameters = constructor.parameters
-
-            // Build map of parameter names to values for changed fields only
-            val parameterValues = mutableMapOf<String, Any?>()
-
-            for (parameter in parameters) {
-                val fieldName = parameter.name ?: continue
-
-                // Get values from both configs using reflection
-                val oldValue = getValueByName(oldConfig, fieldName)
-                val newValue = getValueByName(newConfig, fieldName)
-
-                // Include field in diff only if it changed
-                if (oldValue != newValue) {
-                    parameterValues[fieldName] = newValue
-                } else {
-                    parameterValues[fieldName] = null
-                }
-            }
-
-            // Create Config instance using constructor with named parameters
-            constructor.callBy(
-                parameters.associateWith { param ->
-                    parameterValues[param.name]
-                }
-            )
-        } catch (e: Exception) {
-            // If anything fails, return empty Config
-            Config()
-        }
     }
 
     /**
@@ -593,9 +337,9 @@ class ConfigManager {
     }
 
     /**
-     * Gets the value of a field from a configuration object.
+     * Gets the value of a field from the current configuration object.
      *
-     * This method extracts field values from configuration objects using field names.
+     * This method extracts field values from the current configuration object using field names.
      * With the flattened Config model, this is now much simpler and more efficient.
      *
      * ## Field Names
@@ -615,10 +359,9 @@ class ConfigManager {
      *
      * ## Usage Example
      * ```kotlin
-     * val config = configManager.loadConfig(context, "config.yaml").getOrNull()
-     * val language = configManager.getFieldValue(config, "settingsLanguage") // "en" or "ru"
-     * val theme = configManager.getFieldValue(config, "settingsTheme") // "auto", "light", "dark"
-     * val fuelMode = configManager.getFieldValue(config, "vehicleFuelMode") // "electric", "fuel", etc.
+     * val language = configManager.getFieldValue("settingsLanguage") // "en" or "ru"
+     * val theme = configManager.getFieldValue("settingsTheme") // "light", "dark"
+     * val fuelMode = configManager.getFieldValue("vehicleFuelMode") // "electric", "hybrid", etc.
      * ```
      *
      * ## Error Handling
@@ -627,21 +370,82 @@ class ConfigManager {
      * - Returns `null` if reflection operations fail
      * - Returns `null` for null configuration objects
      *
-     * @param config The configuration object to extract the field value from.
-     *               Can be a complete config or a diff object.
      * @param fieldName The name of the field to extract.
      * @return The string representation of the field value, or `null` if not found or error occurred.
      * @since 1.0.0
      * @see isFieldChanged
      */
-    fun getFieldValue(
-        config: Config?,
-        fieldName: String
-    ): String? {
+    fun getFieldValue(fieldName: String): String? {
         return try {
-            getValueByName(config, fieldName)?.toString()
+            val value = getValueByName(currentConfig, fieldName)
+
+            when (value) {
+                is Enum<*> -> value.name
+                is Int -> value.toString()
+                null -> null
+                else -> value.toString()
+            }
         } catch (e: Exception) {
             null
+        }
+    }
+
+    /**
+     * Sets the value of a field in the current configuration and saves it to disk.
+     *
+     * This method updates the ConfigManager's internal configuration state by setting
+     * a specific field to a new value using reflection, then automatically saves the
+     * updated configuration to disk. It directly modifies the current config object
+     * without creating a new instance.
+     *
+     * ## Universal Field Setting
+     * - **Dynamic Discovery**: Uses reflection to set any Config field by name
+     * - **Extensible**: Works with any field without code changes
+     * - **Direct Modification**: Modifies the current config object in place
+     * - **Automatic Persistence**: Saves updated config to disk automatically
+     *
+     * ## Usage Example
+     * ```kotlin
+     * val result = configManager.setFieldValue("settingsTheme", Theme.dark)
+     * result.onSuccess {
+     *     println("Theme updated and saved successfully")
+     * }.onFailure { error ->
+     *     println("Failed to update theme: ${error.message}")
+     * }
+     * ```
+     *
+     * ## Error Handling
+     * This method returns a [Result] object that encapsulates either success or failure:
+     * - **Success**: Field was updated and configuration saved successfully
+     * - **Failure**: Contains the exception that occurred during the operation
+     *
+     * @param fieldName The name of the field to set.
+     * @param value The new value for the field.
+     * @return [Result]<[Unit]> indicating success or containing an error
+     * @since 1.0.0
+     * @see getFieldValue
+     * @see saveConfig
+     */
+    fun setFieldValue(
+        fieldName: String,
+        value: Any?
+    ): Result<Unit> {
+        return try {
+            val config =
+                currentConfig ?: return Result.failure(
+                    IllegalStateException("No configuration loaded")
+                )
+
+            // Set field value directly using reflection
+            val clazz = config::class.java
+            val field = clazz.getDeclaredField(fieldName)
+            field.isAccessible = true
+            field.set(config, value)
+
+            // Save to disk using the updated current configuration
+            saveConfig()
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 
@@ -689,13 +493,12 @@ class ConfigManager {
         return try {
             if (diff == null) return false
 
-            val configClass = Config::class
-            val constructor = configClass.constructors.first()
-            val parameters = constructor.parameters
+            val clazz = Config::class.java
+            val fields = clazz.declaredFields
 
-            for (parameter in parameters) {
-                val fieldName = parameter.name ?: continue
-                val fieldValue = getValueByName(diff, fieldName)
+            for (field in fields) {
+                field.isAccessible = true
+                val fieldValue = field.get(diff)
 
                 // If any field is non-null, there are changes
                 if (fieldValue != null) {
@@ -732,7 +535,7 @@ class ConfigManager {
      *
      * ## Usage Example
      * ```kotlin
-     * val config = configManager.loadConfig(context, "config.yaml").getOrNull()
+     * val config = configManager.getCurrentConfig()
      * if (configManager.isValidConfig(config)) {
      *     // Safe to use all configuration fields
      *     applyConfiguration(config)
@@ -764,6 +567,159 @@ class ConfigManager {
     }
 
     /**
+     * Copy default configuration from assets to app files directory if it doesn't exist.
+     *
+     * This method checks if a configuration file exists in the app's files directory,
+     * and if not, copies the default configuration from the assets folder. This ensures
+     * a valid configuration file is always available.
+     *
+     * ## File Operations
+     * - Checks if the target configuration file exists in Context.filesDir
+     * - If not found, copies the file from assets to the files directory
+     * - Uses efficient stream copying with proper resource management
+     * - Creates parent directories if needed
+     *
+     * @return [Result]<[Unit]> indicating success or containing an error
+     */
+    fun copyDefaultConfigIfNeeded(): Result<Unit> {
+        return try {
+            val configFile = File(context.dataDir, filePath)
+
+            if (!configFile.exists()) {
+                context.assets.open(filePath).use { inputStream ->
+                    java.io.FileOutputStream(configFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+            }
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Handles configuration change events from the file watcher.
+     *
+     * This internal method processes file change notifications, calculates diffs,
+     * and notifies registered listeners about configuration changes.
+     *
+     * @param newConfig The new configuration loaded from the file
+     */
+    private fun handleConfigChange(newConfig: Config) {
+        val oldConfig = currentConfig ?: return
+        val listener = currentListener ?: return
+
+        // Calculate diff to show exactly what changed
+        val diff = createDiff(oldConfig, newConfig)
+
+        // Update current configuration
+        currentConfig = newConfig
+
+        // Notify listener about the change
+        try {
+            listener.onConfigChanged(newConfig, diff)
+        } catch (e: Exception) {
+            // Don't let listener exceptions break the watching system
+            handleConfigError(e)
+        }
+    }
+
+    /**
+     * Handles configuration error events from the file watcher.
+     *
+     * This internal method processes error notifications and forwards them
+     * to registered listeners.
+     *
+     * @param error The error that occurred during file watching or parsing
+     */
+    private fun handleConfigError(error: Throwable) {
+        val listener = currentListener ?: return
+        val exception = if (error is Exception) error else Exception(error.message, error)
+
+        try {
+            listener.onConfigError(exception)
+        } catch (e: Exception) {
+            // Don't let listener exceptions cause infinite error loops
+            // In a real application, you might want to log this
+        }
+    }
+
+    /**
+     * Creates a diff configuration object showing changes between two configurations.
+     *
+     * This method compares two configuration objects and creates a new configuration
+     * object that contains only the fields that have changed. Unchanged fields are
+     * set to null in the diff object, making it easy to identify what specifically
+     * changed.
+     *
+     * ## Diff Object Structure
+     * The returned diff object follows these rules:
+     * - **Changed fields**: Contain the new value from the updated configuration
+     * - **Unchanged fields**: Are set to null
+     * - **Type safety**: Maintains the same Config type for easy field access
+     *
+     * ## Universal Diff Calculation
+     * - **Dynamic Discovery**: Automatically compares all Config fields using reflection
+     * - **Extensible**: Works with any number of fields without code changes
+     * - **Type Safe**: Maintains Config type throughout the process
+     * - **Maintainable**: No hardcoded field names to maintain
+     *
+     * ## Example Usage
+     * ```kotlin
+     * val oldConfig = Config(settingsLanguage = Language.en, settingsTheme = Theme.light)
+     * val newConfig = Config(settingsLanguage = Language.ru, settingsTheme = Theme.light)
+     * val diff = configManager.createDiff(oldConfig, newConfig)
+     *
+     * // diff.settingsLanguage will be Language.ru (changed)
+     * // diff.settingsTheme will be null (unchanged)
+     * ```
+     *
+     * ## Error Handling
+     * This method is designed to be safe and never throw exceptions:
+     * - Returns empty Config object if reflection operations fail
+     * - Handles null configurations gracefully
+     * - Logs errors but continues execution
+     *
+     * @param oldConfig The previous configuration state. Must not be null.
+     * @param newConfig The new configuration state. Must not be null.
+     * @return A [Config] object containing only the changed fields, with unchanged fields set to null.
+     * @since 1.0.0
+     * @see OnConfigChangeListener
+     * @see isFieldChanged
+     */
+    private fun createDiff(
+        oldConfig: Config,
+        newConfig: Config
+    ): Config {
+        return try {
+            val diffConfig = Config()
+            val clazz = Config::class.java
+            val fields = clazz.declaredFields
+
+            for (field in fields) {
+                field.isAccessible = true
+                val fieldName = field.name
+                val oldValue = getValueByName(oldConfig, fieldName)
+                val newValue = getValueByName(newConfig, fieldName)
+
+                // Include field in diff only if it changed
+                if (oldValue != newValue) {
+                    field.set(diffConfig, newValue)
+                } else {
+                    field.set(diffConfig, null)
+                }
+            }
+
+            diffConfig
+        } catch (e: Exception) {
+            // If anything fails, return empty Config
+            Config()
+        }
+    }
+
+    /**
      * Recursively validates a Config object using reflection.
      *
      * @param obj The Config object to validate
@@ -771,13 +727,12 @@ class ConfigManager {
      */
     private fun validateObjectRecursively(obj: Config): Boolean {
         return try {
-            val configClass = Config::class
-            val constructor = configClass.constructors.first()
-            val parameters = constructor.parameters
+            val clazz = Config::class.java
+            val fields = clazz.declaredFields
 
-            for (parameter in parameters) {
-                val fieldName = parameter.name ?: continue
-                val fieldValue = getValueByName(obj, fieldName)
+            for (field in fields) {
+                field.isAccessible = true
+                val fieldValue = field.get(obj)
 
                 // ALL fields are required when config is loaded from filesystem
                 // This includes enum fields (Language, Theme, FuelMode, DriveMode)
@@ -790,47 +745,6 @@ class ConfigManager {
             true
         } catch (e: Exception) {
             false
-        }
-    }
-
-    /**
-     * Gets the value of a field using reflection with support for dot notation paths.
-     *
-     * This method supports both simple field names and dot notation paths for future extensibility.
-     * Currently, with the flat Config model, only simple field names are used, but the method
-     * is designed to handle nested paths if the structure evolves.
-     *
-     * @param config The Config object to extract the field value from
-     * @param path The field path (simple name or dot notation like "field.subfield")
-     * @return The field value, or null if not found or error occurred
-     */
-    private fun getValueByPath(
-        config: Config?,
-        path: String
-    ): Any? {
-        if (config == null) return null
-
-        return try {
-            // For now, with flat structure, path is just a field name
-            // But this method is extensible for future nested structures
-            if (path.contains('.')) {
-                // Future support for nested paths like "settings.language"
-                val parts = path.split('.')
-                var currentValue: Any? = config
-
-                for (part in parts) {
-                    if (currentValue == null) return null
-                    currentValue = getFieldValueFromObject(currentValue, part)
-                }
-
-                currentValue
-            } else {
-                // Simple field name - current flat structure
-                getValueByName(config, path)
-            }
-        } catch (e: Exception) {
-            // Return null on any reflection error for safety
-            null
         }
     }
 
@@ -859,29 +773,6 @@ class ConfigManager {
     }
 
     /**
-     * Helper method to get field value from any object using reflection.
-     * Used for potential future nested structure support.
-     *
-     * @param obj The object to extract the field value from
-     * @param fieldName The name of the field
-     * @return The field value, or null if not found or error occurred
-     */
-    private fun getFieldValueFromObject(
-        obj: Any,
-        fieldName: String
-    ): Any? {
-        return try {
-            val clazz = obj::class.java
-            val field = clazz.getDeclaredField(fieldName)
-            field.isAccessible = true
-            field.get(obj)
-        } catch (e: Exception) {
-            // Return null on any reflection error for safety
-            null
-        }
-    }
-
-    /**
      * Converts a Config object to YAML string format.
      *
      * This method handles the conversion from the flattened Config model to the
@@ -903,6 +794,9 @@ class ConfigManager {
         }
         config.settingsInterfaceShiftY?.let {
             yaml.appendLine("settings-interface-shift-y: $it")
+        }
+        config.settingsActiveTab?.let {
+            yaml.appendLine("settings-active-tab: ${it.name}")
         }
         config.vehicleFuelMode?.let {
             yaml.appendLine("vehicle-fuel-mode: ${it.name}")

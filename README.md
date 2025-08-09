@@ -1,22 +1,21 @@
 # voboost-config
 
-A production-ready, type-safe YAML configuration library for Android with real-time file watching capabilities.
+Type-safe YAML configuration library for Android with real-time file watching.
 
 ## Features
 
-- **Type-safe Configuration** - Compile-time validation with Kotlin data classes
-- **YAML Support** - Human-readable configuration format with full parsing
-- **Real-time File Watching** - Automatic detection of configuration changes
-- **Precise Diff Calculation** - Know exactly which fields changed
-- **Result-based Error Handling** - No crashes, comprehensive error management
-- **Android Optimized** - Uses Android file system best practices
-- **Production Ready** - Comprehensive testing and robust implementation
+- Type-safe configuration with Kotlin data classes
+- YAML parsing and serialization
+- Real-time file change detection
+- Diff calculation for changed fields
+- Result-based error handling
+- Extended API with utilities
+- Flat configuration structure
+- Universal reflection pattern
 
 ## Quick Start
 
-### 1. Add Dependency
-
-Add to your `build.gradle.kts`:
+### Add Dependency
 
 ```kotlin
 dependencies {
@@ -24,307 +23,227 @@ dependencies {
 }
 ```
 
-### 2. Create Configuration File
+### Configuration File
 
-Create `config.yaml` in your app's assets directory:
+Create `config.yaml` in assets:
 
 ```yaml
-settings:
-  language: "en"
-  theme: "dark"
-  interface-shift-x: 0
-  interface-shift-y: 0
-
-vehicle:
-  fuel-mode: "electric"
-  drive-mode: "sport"
+settings-language: en
+settings-theme: dark
+settings-interface-shift-x: 0
+settings-interface-shift-y: 0
+settings-active-tab: interface
+vehicle-fuel-mode: electric
+vehicle-drive-mode: sport
 ```
 
-### 3. Load Configuration
+### Basic Usage
 
 ```kotlin
-val configManager = ConfigManager()
+val configManager = ConfigManager(context)
 
-// Load configuration with Result-based error handling
-val result = configManager.loadConfig(context, "config.yaml")
+// Load configuration
+val result = configManager.loadConfig()
 result.fold(
     onSuccess = { config ->
-        val language = config.settings?.language  // Language.en
-        val theme = config.settings?.theme        // Theme.dark
-        val fuelMode = config.vehicle?.fuelMode   // FuelMode.electric
+        val language = config.settingsLanguage
+        val theme = config.settingsTheme
     },
     onFailure = { error ->
-        Log.e("Config", "Failed to load configuration", error)
+        Log.e("Config", "Failed to load", error)
     }
 )
-```
 
-### 4. Watch for Real-time Changes
-
-```kotlin
+// Watch for changes
 val listener = object : OnConfigChangeListener {
     override fun onConfigChanged(newConfig: Config, diff: Config) {
-        // React to specific changes - diff contains only changed fields
-        diff.settings?.theme?.let { newTheme ->
-            updateAppTheme(newTheme)
-        }
-        diff.settings?.language?.let { newLanguage ->
-            updateAppLanguage(newLanguage)
-        }
-        diff.vehicle?.fuelMode?.let { newFuelMode ->
-            updateVehicleSettings(newFuelMode)
-        }
+        diff.settingsTheme?.let { updateTheme(it) }
+    }
+    override fun onConfigError(error: Exception) {
+        Log.e("Config", "Parse error", error)
     }
 }
+configManager.startWatching(listener)
 
-// Start watching for changes
-val result = configManager.startWatching(context, "config.yaml", listener)
-result.fold(
-    onSuccess = {
-        Log.d("Config", "Started watching configuration file")
-    },
-    onFailure = { error ->
-        Log.e("Config", "Failed to start watching", error)
-    }
-)
-```
+// Modify and save
+configManager.setFieldValue("settingsTheme", Theme.light)
+configManager.saveConfig()
 
-### 5. Save Configuration
-
-```kotlin
-val newConfig = Config(
-    settings = Settings(
-        language = Language.ru,
-        theme = Theme.light,
-        interfaceShiftX = 10,
-        interfaceShiftY = 5
-    ),
-    vehicle = Vehicle(
-        fuelMode = FuelMode.fuel,
-        driveMode = DriveMode.comfort
-    )
-)
-
-val result = configManager.saveConfig(context, "config.yaml", newConfig)
-result.fold(
-    onSuccess = {
-        Log.d("Config", "Configuration saved successfully")
-    },
-    onFailure = { error ->
-        Log.e("Config", "Failed to save configuration", error)
-    }
-)
-```
-
-### 6. Cleanup Resources
-
-```kotlin
-override fun onDestroy() {
-    super.onDestroy()
-    configManager.stopWatching()
-}
+// Cleanup
+configManager.stopWatching()
 ```
 
 ## Configuration Model
 
-### Complete Data Structure
+### Data Structure
 
 ```kotlin
 data class Config(
-    val settings: Settings? = null,
-    val vehicle: Vehicle? = null
-)
-
-data class Settings(
-    val language: Language? = null,        // ru, en
-    val theme: Theme? = null,              // auto, light, dark
-    val interfaceShiftX: Int? = null,      // Interface X positioning
-    val interfaceShiftY: Int? = null       // Interface Y positioning
-)
-
-data class Vehicle(
-    val fuelMode: FuelMode? = null,        // intellectual, electric, fuel, save
-    val driveMode: DriveMode? = null       // eco, comfort, sport, snow, outing, individual
+    val settingsLanguage: Language? = null,           // ru, en
+    val settingsTheme: Theme? = null,                 // light, dark
+    val settingsInterfaceShiftX: Int? = null,
+    val settingsInterfaceShiftY: Int? = null,
+    val settingsActiveTab: Tab? = null,               // store, applications, interface, vehicle, settings
+    val vehicleFuelMode: FuelMode? = null,            // electric, hybrid, save
+    val vehicleDriveMode: DriveMode? = null           // eco, comfort, sport, snow, outing, individual
 )
 ```
 
-### Supported Enums
+### Enums
 
 ```kotlin
 enum class Language { ru, en }
-enum class Theme { auto, light, dark }
-enum class FuelMode { intellectual, electric, fuel, save }
+enum class Theme { light, dark }
+enum class Tab { store, applications, `interface`, vehicle, settings }
+enum class FuelMode { electric, hybrid, save }
 enum class DriveMode { eco, comfort, sport, snow, outing, individual }
 ```
 
-All enum values map directly to YAML string values (lowercase).
+### YAML Mapping
+
+Kotlin field names map to kebab-case YAML keys:
+- `settingsLanguage` → `settings-language`
+- `vehicleFuelMode` → `vehicle-fuel-mode`
 
 ## API Reference
 
 ### ConfigManager
 
-The main facade providing all configuration operations:
-
 ```kotlin
-class ConfigManager {
-    // Load configuration from YAML file
-    fun loadConfig(context: Context, filePath: String): Result<Config>
+class ConfigManager(context: Context, filePath: String = "config.yaml") {
+    // Core operations
+    fun loadConfig(): Result<Config>
+    fun saveConfig(): Result<Unit>
 
-    // Save configuration to YAML file
-    fun saveConfig(context: Context, filePath: String, config: Config): Result<Unit>
-
-    // Start watching file for changes
-    fun startWatching(context: Context, filePath: String, listener: OnConfigChangeListener): Result<Unit>
-
-    // Stop watching and cleanup resources
+    // File watching
+    fun startWatching(listener: OnConfigChangeListener): Result<Unit>
     fun stopWatching()
+
+    // Current config
+    fun getConfig(): Config?
+
+    // Field operations
+    fun getFieldValue(fieldName: String): String?
+    fun setFieldValue(fieldName: String, value: Any?): Result<Unit>
+
+    // Diff utilities
+    fun isFieldChanged(diff: Config?, fieldName: String): Boolean
+    fun hasDiffAnyChanges(diff: Config?): Boolean
+
+    // Validation
+    fun isValidConfig(config: Config?): Boolean
+
+    // Asset management
+    fun copyDefaultConfigIfNeeded(): Result<Unit>
 }
 ```
 
 ### OnConfigChangeListener
 
-Interface for receiving real-time configuration change notifications:
-
 ```kotlin
 interface OnConfigChangeListener {
     fun onConfigChanged(newConfig: Config, diff: Config)
+    fun onConfigError(error: Exception) // Default empty implementation
 }
 ```
 
-**Important**: The `diff` parameter contains only the fields that changed. Unchanged fields are set to `null`, allowing precise reaction to specific changes.
+The `diff` parameter contains only changed fields (unchanged fields are `null`).
 
-## File System Integration
+## File System
 
-### File Locations
-- **Storage**: App's private files directory (`Context.filesDir`)
-- **Path Format**: `Context.filesDir + "/" + filePath`
-- **Example**: `/data/data/your.package.name/files/config.yaml`
-- **Security**: Private to your app, no special permissions required
+- **Storage**: `Context.dataDir/config.yaml`
+- **Security**: App private directory, no permissions required
+- **Assets**: Copy default config from assets on first run
 
-### Asset Integration
 ```kotlin
-// Copy default configuration from assets on first run
-private fun copyDefaultConfigIfNeeded() {
-    val configFile = File(filesDir, "config.yaml")
-    if (!configFile.exists()) {
-        assets.open("config.yaml").use { input ->
-            configFile.outputStream().use { output ->
-                input.copyTo(output)
-            }
-        }
-    }
-}
+// Copy from assets if needed
+configManager.copyDefaultConfigIfNeeded()
 ```
 
 ## Error Handling
 
-All operations return `Result<T>` objects for comprehensive error handling:
+All operations return `Result<T>`:
 
 ```kotlin
-val result = configManager.loadConfig(context, "config.yaml")
-
-// Recommended: Use fold for complete error handling
 result.fold(
-    onSuccess = { config ->
-        // Configuration loaded successfully
-        processConfiguration(config)
-    },
-    onFailure = { error ->
-        // Handle specific error types
-        when (error) {
-            is IllegalArgumentException -> {
-                // File not found or invalid path
-                Log.e("Config", "Configuration file not found", error)
-            }
-            is Exception -> {
-                // Parse error, I/O error, or other issues
-                Log.e("Config", "Configuration error", error)
-            }
-        }
-    }
+    onSuccess = { config -> /* use config */ },
+    onFailure = { error -> /* handle error */ }
 )
-
-// Alternative: Use individual handlers
-result.onSuccess { config ->
-    // Handle success
-}.onFailure { error ->
-    // Handle failure
-}
 ```
 
-## Real-time File Watching
+## File Watching
 
-### How It Works
-- **File System Monitoring**: Uses Hoplite's `FileWatcher` for efficient change detection
-- **Automatic Parsing**: Immediately parses changed files
-- **Diff Calculation**: Compares old and new configurations to identify changes
-- **Thread Safety**: Callbacks are delivered on background threads (use `runOnUiThread` for UI updates)
+Uses Hoplite's `FileWatcher` for change detection:
 
-### Best Practices
 ```kotlin
-class MainActivity : AppCompatActivity(), OnConfigChangeListener {
-    private val configManager = ConfigManager()
-
-    override fun onConfigChanged(newConfig: Config, diff: Config) {
-        // Always switch to UI thread for UI updates
-        runOnUiThread {
-            updateUI(newConfig, diff)
-        }
+val reloadable = ReloadableConfig(configLoader, Config::class)
+    .addWatcher(FileWatcher(directory))
+    .withErrorHandler { error ->
+        coroutineScope.launch { handleConfigError(error) }
     }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        // Always cleanup to prevent memory leaks
-        configManager.stopWatching()
-    }
-}
 ```
 
-## Demo Application
+## Extended Utilities
 
-A complete demonstration application is available in the **voboost-config-demo** project:
+```kotlin
+// Check specific field changes
+if (configManager.isFieldChanged(diff, "settingsTheme")) {
+    val newTheme = configManager.getFieldValue("settingsTheme")
+    updateTheme(newTheme)
+}
 
-- **Location**: Separate project in sibling directory
-- **Features**: Real-time visual feedback with red color highlighting
-- **Integration Example**: Production-ready implementation patterns
-- **Educational Value**: Comprehensive learning resource
+// Validate completeness (all fields except settingsActiveTab required)
+if (configManager.isValidConfig(config)) {
+    applyConfiguration(config)
+}
 
-### Running the Demo
-```bash
-# Navigate to demo project
-cd ../voboost-config-demo
-
-# Build and install
-./gradlew assembleDebug
-./gradlew installDebug
-
-# Launch application
-adb shell am start -n ru.voboost.config.demo/.MainActivity
+// Check for any changes
+if (configManager.hasDiffAnyChanges(diff)) {
+    notifyConfigurationChanged()
+}
 ```
 
 ## Architecture
 
 ### Design Patterns
-- **Facade Pattern**: Simple 4-method public API
-- **Observer Pattern**: Real-time change notifications
+
+- **Facade Pattern**: ConfigManager provides unified API
+- **Observer Pattern**: OnConfigChangeListener for change notifications
 - **Result Pattern**: Consistent error handling
-- **Builder Pattern**: Hoplite ConfigLoaderBuilder integration
+- **Reflection Pattern**: Universal field access
 
-### Key Components
-- **ConfigManager**: Main service facade
-- **ReloadableConfig**: File watching orchestrator (Hoplite)
-- **FileWatcher**: File system monitoring (Hoplite)
-- **Config/Settings/Vehicle**: Type-safe data model
+### File Watching Flow
 
-## Requirements
+```
+File Change → FileWatcher → ReloadableConfig → Parse → Diff → Callback
+                                                   ↓
+                                            Parse Error → OnConfigError
+```
 
-- **Android API 28+** (Android 9.0 or higher)
-- **Kotlin** project (library is Kotlin-first)
-- **No special permissions** required (uses app private storage)
+## Implementation Rules
+
+### Configuration Structure
+
+- **FLAT structure only** - no nested objects
+- **No @ConfigAlias annotations** - direct kebab-case mapping
+- **All fields nullable** for partial configurations
+- **Kebab-case YAML keys**: `settingsLanguage` → `settings-language`
+
+### Reflection Rules
+
+- **ALL ConfigManager methods use recursive reflection** (not direct field access)
+- **Config type only** - never use `Any` type
+- **Exception**: Only `convertConfigToYaml` uses direct field access
+- **Universal methods** work with any number of fields
+- **Extensible design** handles new fields automatically
+
+### Validation Rules
+
+- **All fields required** when loaded from filesystem
+- **Recursive validation** through `validateObjectRecursively`
+- **Type-safe validation** using reflection
 
 ## Dependencies
-
-The library uses these proven, stable dependencies:
 
 ```kotlin
 // YAML processing and file watching
@@ -332,36 +251,42 @@ implementation("com.sksamuel.hoplite:hoplite-core:2.9.0")
 implementation("com.sksamuel.hoplite:hoplite-yaml:2.9.0")
 implementation("com.sksamuel.hoplite:hoplite-watch:2.9.0")
 
-// Async operations
+// Coroutines
 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+```
+
+## Requirements
+
+- Android API 28+
+- Kotlin project
+- No special permissions
+
+## Demo Application
+
+Complete demo available in `../voboost-config-demo/`:
+
+```bash
+cd ../voboost-config-demo
+./gradlew assembleDebug
+./gradlew installDebug
 ```
 
 ## Testing
 
-The library includes comprehensive testing:
-- **33+ Unit Tests**: All public API methods covered
-- **Integration Tests**: Real file operations and YAML parsing
-- **File Watching Tests**: Actual change detection with timing
-- **Error Scenario Tests**: Comprehensive failure case coverage
+Unit tests covering:
+- Core functionality
+- File watching with real files
+- Error scenarios
+- Extended utilities
+- Integration tests
 
-## Production Readiness
+## Build
 
-✅ **Complete API**: All planned features implemented
-✅ **Comprehensive Testing**: 100% public API test coverage
-✅ **Error Resilience**: No uncaught exceptions in public methods
-✅ **Memory Efficient**: Proper resource cleanup and minimal state
-✅ **Thread Safe**: Coroutine-based async operations
-✅ **Documentation**: Complete API documentation and examples
-✅ **Demo Application**: Working integration example
+```bash
+# Library
+./gradlew build
+./gradlew test
 
-## License
-
-[Add your license information here]
-
-## Contributing
-
-[Add contributing guidelines here]
-
-## Support
-
-[Add support information here]
+# Demo app
+cd ../voboost-config-demo
+./gradlew assembleDebug

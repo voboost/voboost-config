@@ -22,7 +22,7 @@ class YamlConversionTest : BaseConfigTest() {
                 settingsLanguage = Language.en,
                 settingsTheme = Theme.dark,
                 settingsInterfaceShiftX = 10,
-                vehicleFuelMode = FuelMode.intellectual,
+                vehicleFuelMode = FuelMode.electric,
                 vehicleDriveMode = DriveMode.comfort
             )
 
@@ -32,7 +32,7 @@ class YamlConversionTest : BaseConfigTest() {
         assertTrue(yaml.contains("settings-language: en"))
         assertTrue(yaml.contains("settings-theme: dark"))
         assertTrue(yaml.contains("settings-interface-shift-x: 10"))
-        assertTrue(yaml.contains("vehicle-fuel-mode: intellectual"))
+        assertTrue(yaml.contains("vehicle-fuel-mode: electric"))
         assertTrue(yaml.contains("vehicle-drive-mode: comfort"))
     }
 
@@ -102,10 +102,6 @@ class YamlConversionTest : BaseConfigTest() {
         )
 
         // Test all Theme enum values
-        val themeAutoConfig = Config(settingsTheme = Theme.auto)
-        yamlContent = convertConfigToYamlViaReflection(themeAutoConfig)
-        assertTrue("Theme.auto should convert to 'settings-theme: auto'", yamlContent.contains("settings-theme: auto"))
-
         val themeLightConfig = Config(settingsTheme = Theme.light)
         yamlContent = convertConfigToYamlViaReflection(themeLightConfig)
         assertTrue(
@@ -118,11 +114,11 @@ class YamlConversionTest : BaseConfigTest() {
         assertTrue("Theme.dark should convert to 'settings-theme: dark'", yamlContent.contains("settings-theme: dark"))
 
         // Test all FuelMode enum values
-        val fuelIntellectualConfig = Config(vehicleFuelMode = FuelMode.intellectual)
+        val fuelIntellectualConfig = Config(vehicleFuelMode = FuelMode.electric)
         yamlContent = convertConfigToYamlViaReflection(fuelIntellectualConfig)
         assertTrue(
-            "FuelMode.intellectual should convert to 'vehicle-fuel-mode: intellectual'",
-            yamlContent.contains("vehicle-fuel-mode: intellectual")
+            "FuelMode.electric should convert to 'vehicle-fuel-mode: electric'",
+            yamlContent.contains("vehicle-fuel-mode: electric")
         )
 
         val fuelElectricConfig = Config(vehicleFuelMode = FuelMode.electric)
@@ -132,11 +128,11 @@ class YamlConversionTest : BaseConfigTest() {
             yamlContent.contains("vehicle-fuel-mode: electric")
         )
 
-        val fuelConfig = Config(vehicleFuelMode = FuelMode.fuel)
+        val fuelConfig = Config(vehicleFuelMode = FuelMode.hybrid)
         yamlContent = convertConfigToYamlViaReflection(fuelConfig)
         assertTrue(
-            "FuelMode.fuel should convert to 'vehicle-fuel-mode: fuel'",
-            yamlContent.contains("vehicle-fuel-mode: fuel")
+            "FuelMode.hybrid should convert to 'vehicle-fuel-mode: hybrid'",
+            yamlContent.contains("vehicle-fuel-mode: hybrid")
         )
 
         val fuelSaveConfig = Config(vehicleFuelMode = FuelMode.save)
@@ -245,7 +241,7 @@ class YamlConversionTest : BaseConfigTest() {
                 settingsTheme = Theme.dark,
                 settingsInterfaceShiftX = 0,
                 settingsInterfaceShiftY = 0,
-                vehicleFuelMode = FuelMode.intellectual,
+                vehicleFuelMode = FuelMode.electric,
                 vehicleDriveMode = DriveMode.comfort
             )
 
@@ -261,8 +257,8 @@ class YamlConversionTest : BaseConfigTest() {
             yamlContent.contains("settings-theme: dark")
         )
         assertTrue(
-            "YAML should contain FuelMode.intellectual as 'vehicle-fuel-mode: intellectual'",
-            yamlContent.contains("vehicle-fuel-mode: intellectual")
+            "YAML should contain FuelMode.electric as 'vehicle-fuel-mode: electric'",
+            yamlContent.contains("vehicle-fuel-mode: electric")
         )
         assertTrue(
             "YAML should contain DriveMode.comfort as 'vehicle-drive-mode: comfort'",
@@ -350,7 +346,7 @@ class YamlConversionTest : BaseConfigTest() {
         val completeConfig =
             Config(
                 settingsLanguage = Language.en,
-                settingsTheme = Theme.auto,
+                settingsTheme = Theme.light,
                 settingsInterfaceShiftX = 15,
                 settingsInterfaceShiftY = -5,
                 vehicleFuelMode = FuelMode.save,
@@ -361,7 +357,7 @@ class YamlConversionTest : BaseConfigTest() {
 
         // Verify all fields are present
         assertTrue("YAML should contain language", yamlContent.contains("settings-language: en"))
-        assertTrue("YAML should contain theme", yamlContent.contains("settings-theme: auto"))
+        assertTrue("YAML should contain theme", yamlContent.contains("settings-theme: light"))
         assertTrue("YAML should contain interface-shift-x", yamlContent.contains("settings-interface-shift-x: 15"))
         assertTrue("YAML should contain interface-shift-y", yamlContent.contains("settings-interface-shift-y: -5"))
         assertTrue("YAML should contain fuel-mode", yamlContent.contains("vehicle-fuel-mode: save"))
