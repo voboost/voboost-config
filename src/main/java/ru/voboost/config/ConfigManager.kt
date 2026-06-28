@@ -131,6 +131,14 @@ class ConfigManager private constructor(
     // The scope is recreated in startWatching() after stopWatching() cancels
     // the previous one, so launched coroutines always run on a live scope.
     private var reloadableConfig: ReloadableConfig<Config>? = null
+
+    // currentConfig is read from the UI thread (getConfig/getFieldValue/
+    // setFieldValue) and written from the watcher coroutine on Dispatchers.IO
+    // (handleConfigChange). @Volatile ensures the write is visible to all
+    // threads without a full lock; the reference itself is the only mutable
+    // state (R3-CFG-01). Config field mutation via setFieldValue still races
+    // with a concurrent reload, but the reference swap is now safe.
+    @Volatile
     private var currentConfig: Config? = null
     private var currentListener: OnConfigChangeListener? = null
     private var watchedFile: File? = null
