@@ -7,6 +7,7 @@ import com.sksamuel.hoplite.watch.ReloadableConfig
 import com.sksamuel.hoplite.watch.watchers.FileWatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import ru.voboost.config.models.Config
 import java.io.File
@@ -105,12 +106,14 @@ class ConfigManager private constructor(
         assetsProvider = null,
     )
 
-    // Internal state for file watching
+    // Internal state for file watching.
+    // The scope is recreated in startWatching() after stopWatching() cancels
+    // the previous one, so launched coroutines always run on a live scope.
     private var reloadableConfig: ReloadableConfig<Config>? = null
     private var currentConfig: Config? = null
     private var currentListener: OnConfigChangeListener? = null
     private var watchedFile: File? = null
-    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private var coroutineScope = CoroutineScope(Dispatchers.IO)
 
     /**
      * Gets the current configuration object.
@@ -236,8 +239,11 @@ class ConfigManager private constructor(
      */
     fun startWatching(listener: OnConfigChangeListener): Result<Unit> {
         return try {
-            // Stop any existing watching operation
+            // Stop any existing watching operation. stopWatching() cancels the
+            // current coroutineScope, so recreate a fresh one before launching
+            // any new coroutines below.
             stopWatching()
+            coroutineScope = CoroutineScope(Dispatchers.IO)
 
             val file = File(configDir, filePath)
             if (!file.exists()) {
@@ -317,6 +323,12 @@ class ConfigManager private constructor(
      * @see startWatching
      */
     fun stopWatching() {
+        // Cancel any pending coroutine work launched on the IO scope so that
+        // change/error callbacks are no longer dispatched after stop.
+        // NOTE: Hoplite 2.9.0 ReloadableConfig / FileWatcher expose no close/stop
+        // API, so the coroutine scope is the only resource we can deterministically
+        // release here. Dropping the reloadableConfig reference lets it be GC'd.
+        coroutineScope.cancel()
         reloadableConfig = null
         currentListener = null
         watchedFile = null
