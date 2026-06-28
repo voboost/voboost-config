@@ -237,19 +237,37 @@ class ConfigManager private constructor(
             // Convert config to YAML
             val yamlContent = convertConfigToYaml(config)
 
-            // Write atomically: write to temp file, then rename
-            // This prevents the file watcher from seeing an empty/partial file
+            // Write atomically: write to temp file, fsync, then rename.
+            // This prevents the file watcher (Hoplite FileWatcher) from
+            // observing an empty/partial file mid-write. The fsync forces
+            // the YAML bytes to stable storage before the directory entry
+            // switches, so a power loss after the rename cannot leave a
+            // zero-length or partially-flushed config (R4-CFG-01, same
+            // crash-consistency gap class as R3-VBS-02 in PlanProducer).
+            // On rename failure we throw rather than falling back to a
+            // direct file.writeText: a non-atomic direct write is exactly
+            // the torn-write pattern the temp+rename is meant to avoid,
+            // and the FileWatcher could observe it mid-write and trigger
+            // a spurious reload with a partial file.
             val tempFile = File.createTempFile("config", ".tmp", file.parentFile)
-            tempFile.writeText(yamlContent)
-
-            // Atomic rename operation
-            if (!tempFile.renameTo(file)) {
-                // If rename fails, try manual copy as fallback
-                file.writeText(yamlContent)
-                tempFile.delete()
+            try {
+                java.io.FileOutputStream(tempFile).use { output ->
+                    output.write(yamlContent.toByteArray(Charsets.UTF_8))
+                    output.fd.sync()
+                }
+                if (!tempFile.renameTo(file)) {
+                    throw java.io.IOException(
+                        "Failed to atomically rename config temp file to ${file.absolutePath}",
+                    )
+                }
+                Result.success(Unit)
+            } finally {
+                // Clean up the temp file if it still exists (rename
+                // succeeded or a failure occurred before the rename).
+                if (tempFile.exists()) {
+                    tempFile.delete()
+                }
             }
-
-            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
