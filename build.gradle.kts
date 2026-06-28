@@ -3,6 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.parcelize")
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
+    id("checkstyle")
+    id("com.diffplug.spotless") version "6.25.0"
 }
 
 // Apply Voboost code style configuration
@@ -12,7 +14,7 @@ apply(from = "../voboost-codestyle/codestyle.gradle")
 ktlint {
     additionalEditorconfig =
         mapOf(
-            "ktlint_standard_enum-entry-name-case" to "disabled"
+            "ktlint_standard_enum-entry-name-case" to "disabled",
         )
 }
 
@@ -30,9 +32,11 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            // Single release build; the debug variant is disabled below.
+            // (-Pdebuggable applies to application modules, not this library.)
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -42,8 +46,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        }
     }
 
     buildFeatures {
@@ -51,7 +57,27 @@ android {
     }
 }
 
+// Release-only: drop the debug variant entirely. `./gradlew build` produces the
+// single release variant; `-Pdebuggable=true` flips release's isDebuggable for
+// rare deep-debugging without reintroducing a debug build type.
+androidComponents {
+    beforeVariants { variant ->
+        variant.enable = variant.buildType != "debug"
+    }
+}
+
+// Unit tests for the single (release) variant. Alias keeps "Release"/"Debug"
+// out of the command line.
+tasks.register("testUnit") {
+    group = "verification"
+    description = "Run unit tests (single release variant)"
+    dependsOn("testReleaseUnitTest")
+}
+
 dependencies {
+    // Add voboost-components dependency for Theme and Language enums
+    implementation(project(":voboost-components"))
+
     // Hoplite for YAML configuration parsing
     implementation("com.sksamuel.hoplite:hoplite-core:2.9.0")
     implementation("com.sksamuel.hoplite:hoplite-yaml:2.9.0")
