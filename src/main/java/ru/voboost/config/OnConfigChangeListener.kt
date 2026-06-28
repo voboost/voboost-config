@@ -123,7 +123,7 @@ interface OnConfigChangeListener {
      */
     fun onConfigChanged(
         newConfig: Config,
-        diff: Config
+        diff: Config,
     )
 
     /**

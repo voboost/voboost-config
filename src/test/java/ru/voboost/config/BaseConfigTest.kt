@@ -54,9 +54,14 @@ abstract class BaseConfigTest {
      */
     protected fun createDiffViaReflection(
         oldConfig: Config,
-        newConfig: Config
+        newConfig: Config,
     ): Config {
-        val method = ConfigManager::class.java.getDeclaredMethod("createDiff", Config::class.java, Config::class.java)
+        val method =
+            ConfigManager::class.java.getDeclaredMethod(
+                "createDiff",
+                Config::class.java,
+                Config::class.java,
+            )
         method.isAccessible = true
         return method.invoke(configManager, oldConfig, newConfig) as Config
     }
@@ -65,7 +70,11 @@ abstract class BaseConfigTest {
      * Helper method to access private convertConfigToYaml method via reflection
      */
     protected fun convertConfigToYamlViaReflection(config: Config): String {
-        val method = ConfigManager::class.java.getDeclaredMethod("convertConfigToYaml", Config::class.java)
+        val method =
+            ConfigManager::class.java.getDeclaredMethod(
+                "convertConfigToYaml",
+                Config::class.java,
+            )
         method.isAccessible = true
         return method.invoke(configManager, config) as String
     }

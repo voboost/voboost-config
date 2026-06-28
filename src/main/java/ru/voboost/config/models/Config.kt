@@ -35,8 +35,6 @@ package ru.voboost.config.models
  *
  * @since 1.0.0
  * @see ConfigManager
- * @see Language
- * @see Theme
  * @see Tab
  * @see FuelMode
  * @see DriveMode
@@ -44,52 +42,80 @@ package ru.voboost.config.models
 data class Config(
     /**
      * Application display language setting.
+     * Stored as String in config file (e.g., "en", "ru") and converted to Language enum in ConfigViewModel.
      *
      * **YAML Key**: `settings-language`
      */
-    var settingsLanguage: Language? = null,
-
+    var settingsLanguage: String? = null,
     /**
      * Application theme/appearance setting.
+     * Stored as String in config file (e.g., "free-dark", "free-light") and converted to Theme enum in ConfigViewModel.
      *
      * **YAML Key**: `settings-theme`
      */
-    var settingsTheme: Theme? = null,
-
+    var settingsTheme: String? = null,
     /**
      * Horizontal interface positioning adjustment in pixels.
      *
      * **YAML Key**: `settings-interface-shift-x`
      */
     var settingsInterfaceShiftX: Int? = null,
-
     /**
      * Vertical interface positioning adjustment in pixels.
      *
      * **YAML Key**: `settings-interface-shift-y`
      */
     var settingsInterfaceShiftY: Int? = null,
-
     /**
      * The tab that should be active when the application starts.
      *
      * **YAML Key**: `settings-active-tab`
      */
     var settingsActiveTab: Tab? = null,
-
     /**
      * Vehicle fuel/energy management mode setting.
      *
      * **YAML Key**: `vehicle-fuel-mode`
      */
     var vehicleFuelMode: FuelMode? = null,
-
     /**
      * Vehicle driving behavior mode setting.
      *
      * **YAML Key**: `vehicle-drive-mode`
      */
     var vehicleDriveMode: DriveMode? = null,
+    /**
+     * Russian keyboard feature setting.
+     * Stored as String in config file (e.g., "enable-russian").
+     *
+     * **YAML Key**: `interface-keyboard`
+     */
+    var interfaceKeyboard: String? = null,
+    /**
+     * Weather widget feature setting.
+     * Stored as String in config file (e.g., "enable-non-chineese-cities").
+     *
+     * **YAML Key**: `interface-widget-weather`
+     */
+    var interfaceWidgetWeather: String? = null,
+    /**
+     * Application startup behavior mode.
+     *
+     * **YAML Key**: `settings-startup`
+     */
+    var settingsStartup: StartupMode? = null,
+    /**
+     * Vehicle model type.
+     *
+     * **YAML Key**: `settings-car-model`
+     */
+    var settingsCarModel: CarModel? = null,
+    /**
+     * Pedestrian warning sound behavior.
+     *
+     * **YAML Key**: `vehicle-pedestrian-warning`
+     */
+    var vehiclePedestrianWarning: PedestrianWarning? = null,
 )
 
 /**
@@ -102,41 +128,7 @@ enum class Tab {
     applications,
     `interface`,
     vehicle,
-    settings
-}
-
-/**
- * Supported application display languages.
- *
- * @since 1.0.0
- */
-enum class Language {
-    /**
-     * Russian language.
-     */
-    ru,
-
-    /**
-     * English language.
-     */
-    en
-}
-
-/**
- * Supported application visual themes.
- *
- * @since 1.0.0
- */
-enum class Theme {
-    /**
-     * Light theme with bright colors and dark text.
-     */
-    light,
-
-    /**
-     * Dark theme with dark colors and light text.
-     */
-    dark
+    settings,
 }
 
 /**
@@ -151,6 +143,12 @@ enum class FuelMode {
     electric,
 
     /**
+     * Forced electric mode - prevents combustion engine from starting.
+     * Only available for Voyah Free model.
+     */
+    electric_forced,
+
+    /**
      * Hybrid fuel/electric management mode.
      */
     hybrid,
@@ -158,7 +156,7 @@ enum class FuelMode {
     /**
      * Maximum fuel consumption mode.
      */
-    save
+    save,
 }
 
 /**
@@ -195,5 +193,61 @@ enum class DriveMode {
     /**
      * User-customizable individual settings.
      */
-    individual
+    individual,
+}
+
+/**
+ * Application startup behavior mode.
+ *
+ * @since 1.2.0
+ */
+enum class StartupMode {
+    /**
+     * Application does not start automatically.
+     */
+    off,
+
+    /**
+     * Application starts in hidden/background mode.
+     */
+    hidden,
+
+    /**
+     * Application starts with interface visible.
+     */
+    `interface`,
+}
+
+/**
+ * Vehicle model type.
+ *
+ * @since 1.2.0
+ */
+enum class CarModel {
+    /**
+     * Voyah Free model.
+     */
+    free,
+
+    /**
+     * Voyah Dreamer model.
+     */
+    dreamer,
+}
+
+/**
+ * Pedestrian warning sound behavior.
+ *
+ * @since 1.2.0
+ */
+enum class PedestrianWarning {
+    /**
+     * Original vehicle default behavior.
+     */
+    original,
+
+    /**
+     * Turn off pedestrian warning sound.
+     */
+    off,
 }

@@ -10,10 +10,23 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import ru.voboost.config.models.Config
 import java.io.File
-import java.io.FileWriter
+import java.io.InputStream
 
 /**
- * Configuration management class for Android applications.
+ * Functional interface for accessing bundled assets.
+ * Used on Android to copy default config from assets.
+ */
+fun interface AssetsProvider {
+    /**
+     * Opens an asset file as an input stream.
+     * @param path Path to the asset file
+     * @return InputStream for the asset file
+     */
+    fun open(path: String): InputStream
+}
+
+/**
+ * Configuration management class for Android and desktop applications.
  *
  * This class provides a comprehensive API for loading, saving, and watching YAML configuration files
  * with full type safety and real-time change detection. It encapsulates all the complexity of file
@@ -24,34 +37,26 @@ import java.io.FileWriter
  * - **Automatic file watching** with real-time change notifications
  * - **Diff calculation** to identify exactly which configuration fields changed
  * - **Robust error handling** with Result-based return types
- * - **Android-optimized** file operations using Context.filesDir
+ * - **Cross-platform support** for Android and desktop
  * - **Flat configuration model** for simplified programmatic access
  * - **Instance-based design** for better testability and flexibility
  *
- * ## Usage Example
+ * ## Usage Example (Android)
  * ```kotlin
  * // Create instance with context (uses default config.yaml)
  * val configManager = ConfigManager(context)
  *
  * // Or specify custom file path
  * val configManager = ConfigManager(context, "custom-config.yaml")
+ * ```
  *
- * // Load initial configuration
- * val loadResult = configManager.loadConfig()
- * loadResult.onSuccess { config ->
- *     // Use the loaded configuration
- * }
+ * ## Usage Example (Desktop)
+ * ```kotlin
+ * // Create instance with config directory
+ * val configManager = ConfigManager(configDir = File("/path/to/config"))
  *
- * // Start watching for changes
- * val listener = object : OnConfigChangeListener {
- *     override fun onConfigChanged(newConfig: Config, diff: Config) {
- *         // Handle configuration changes
- *     }
- *     override fun onConfigError(error: Exception) {
- *         // Handle errors
- *     }
- * }
- * configManager.startWatching(listener)
+ * // Or specify custom file path
+ * val configManager = ConfigManager(configDir = File("/path/to/config"), filePath = "custom-config.yaml")
  * ```
  *
  * ## Thread Safety
@@ -59,19 +64,47 @@ import java.io.FileWriter
  * ensure proper synchronization in your application code.
  *
  * ## File Location
- * All configuration files are stored relative to the application's private data directory
- * (`Context.dataDir`). This ensures proper Android security and data isolation.
+ * - **Android**: Configuration files are stored relative to the application's private data directory
+ *   (`Context.dataDir`). This ensures proper Android security and data isolation.
+ * - **Desktop**: Configuration files are stored in the specified config directory.
  *
- * @param context Android context for accessing the application's data directory
- * @param filePath Relative path to the configuration file within the files directory (defaults to "config.yaml")
  * @since 1.0.0
  * @see Config
  * @see OnConfigChangeListener
  */
-class ConfigManager(
-    private val context: Context,
-    private val filePath: String = "config.yaml"
+class ConfigManager private constructor(
+    private val configDir: File,
+    private val filePath: String = "config.yaml",
+    private val assetsProvider: AssetsProvider? = null,
 ) {
+    /**
+     * Android constructor with Context.
+     * @param context Android context for accessing the application's data directory
+     * @param filePath Relative path to the configuration file within the files directory (defaults to "config.yaml")
+     */
+    constructor(
+        context: Context,
+        filePath: String = "config.yaml",
+    ) : this(
+        configDir = context.dataDir,
+        filePath = filePath,
+        assetsProvider = AssetsProvider { path -> context.assets.open(path) },
+    )
+
+    /**
+     * Desktop constructor with config directory.
+     * @param configDir Directory where configuration files are stored
+     * @param filePath Relative path to the configuration file within the config directory (defaults to "config.yaml")
+     */
+    constructor(
+        configDir: File,
+        filePath: String = "config.yaml",
+    ) : this(
+        configDir = configDir,
+        filePath = filePath,
+        assetsProvider = null,
+    )
+
     // Internal state for file watching
     private var reloadableConfig: ReloadableConfig<Config>? = null
     private var currentConfig: Config? = null
@@ -103,11 +136,11 @@ class ConfigManager(
      */
     fun loadConfig(): Result<Config> {
         return try {
-            val file = File(context.dataDir, filePath)
+            val file = File(configDir, filePath)
 
             if (!file.exists()) {
                 return Result.failure(
-                    IllegalArgumentException("Configuration file does not exist: ${file.absolutePath}")
+                    IllegalArgumentException("Configuration file does not exist: ${file.absolutePath}"),
                 )
             }
 
@@ -159,19 +192,29 @@ class ConfigManager(
      */
     fun saveConfig(): Result<Unit> {
         return try {
-            val config = currentConfig ?: return Result.failure(
-                IllegalStateException("No configuration loaded. Call loadConfig() first.")
-            )
+            val config =
+                currentConfig ?: return Result.failure(
+                    IllegalStateException("No configuration loaded. Call loadConfig() first."),
+                )
 
-            val file = File(context.dataDir, filePath)
+            val file = File(configDir, filePath)
 
             // Ensure parent directories exist
             file.parentFile?.mkdirs()
 
-            // Convert config to YAML and write atomically
+            // Convert config to YAML
             val yamlContent = convertConfigToYaml(config)
-            FileWriter(file).use { writer ->
-                writer.write(yamlContent)
+
+            // Write atomically: write to temp file, then rename
+            // This prevents the file watcher from seeing an empty/partial file
+            val tempFile = File.createTempFile("config", ".tmp", file.parentFile)
+            tempFile.writeText(yamlContent)
+
+            // Atomic rename operation
+            if (!tempFile.renameTo(file)) {
+                // If rename fails, try manual copy as fallback
+                file.writeText(yamlContent)
+                tempFile.delete()
             }
 
             Result.success(Unit)
@@ -196,10 +239,10 @@ class ConfigManager(
             // Stop any existing watching operation
             stopWatching()
 
-            val file = File(context.dataDir, filePath)
+            val file = File(configDir, filePath)
             if (!file.exists()) {
                 return Result.failure(
-                    IllegalArgumentException("Configuration file does not exist: ${file.absolutePath}")
+                    IllegalArgumentException("Configuration file does not exist: ${file.absolutePath}"),
                 )
             }
 
@@ -207,7 +250,7 @@ class ConfigManager(
             val loadResult = loadConfig()
             if (loadResult.isFailure) {
                 return Result.failure(
-                    loadResult.exceptionOrNull() ?: Exception("Failed to load initial configuration")
+                    loadResult.exceptionOrNull() ?: Exception("Failed to load initial configuration"),
                 )
             }
 
@@ -324,7 +367,7 @@ class ConfigManager(
      */
     fun isFieldChanged(
         diff: Config?,
-        fieldName: String
+        fieldName: String,
     ): Boolean {
         if (diff == null) return false
         return try {
@@ -428,12 +471,12 @@ class ConfigManager(
      */
     fun setFieldValue(
         fieldName: String,
-        value: Any?
+        value: Any?,
     ): Result<Unit> {
         return try {
             val config =
                 currentConfig ?: return Result.failure(
-                    IllegalStateException("No configuration loaded")
+                    IllegalStateException("No configuration loaded"),
                 )
 
             // Set field value directly using reflection
@@ -567,15 +610,15 @@ class ConfigManager(
     }
 
     /**
-     * Copy default configuration from assets to app files directory if it doesn't exist.
+     * Copy default configuration from assets to config directory if it doesn't exist.
      *
-     * This method checks if a configuration file exists in the app's files directory,
-     * and if not, copies the default configuration from the assets folder. This ensures
-     * a valid configuration file is always available.
+     * This method checks if a configuration file exists in the config directory,
+     * and if not, copies the default configuration from the assets folder (Android only).
+     * This ensures a valid configuration file is always available.
      *
      * ## File Operations
-     * - Checks if the target configuration file exists in Context.filesDir
-     * - If not found, copies the file from assets to the files directory
+     * - Checks if the target configuration file exists in config directory
+     * - If not found and assetsProvider is available, copies the file from assets
      * - Uses efficient stream copying with proper resource management
      * - Creates parent directories if needed
      *
@@ -583,10 +626,11 @@ class ConfigManager(
      */
     fun copyDefaultConfigIfNeeded(): Result<Unit> {
         return try {
-            val configFile = File(context.dataDir, filePath)
+            val configFile = File(configDir, filePath)
 
             if (!configFile.exists()) {
-                context.assets.open(filePath).use { inputStream ->
+                val provider = assetsProvider ?: return Result.success(Unit)
+                provider.open(filePath).use { inputStream ->
                     java.io.FileOutputStream(configFile).use { outputStream ->
                         inputStream.copyTo(outputStream)
                     }
@@ -691,7 +735,7 @@ class ConfigManager(
      */
     private fun createDiff(
         oldConfig: Config,
-        newConfig: Config
+        newConfig: Config,
     ): Config {
         return try {
             val diffConfig = Config()
@@ -757,7 +801,7 @@ class ConfigManager(
      */
     private fun getValueByName(
         config: Config?,
-        fieldName: String
+        fieldName: String,
     ): Any? {
         if (config == null) return null
 
@@ -784,10 +828,10 @@ class ConfigManager(
 
         // Convert each field to kebab-case YAML key
         config.settingsLanguage?.let {
-            yaml.appendLine("settings-language: ${it.name}")
+            yaml.appendLine("settings-language: $it")
         }
         config.settingsTheme?.let {
-            yaml.appendLine("settings-theme: ${it.name}")
+            yaml.appendLine("settings-theme: $it")
         }
         config.settingsInterfaceShiftX?.let {
             yaml.appendLine("settings-interface-shift-x: $it")
@@ -803,6 +847,21 @@ class ConfigManager(
         }
         config.vehicleDriveMode?.let {
             yaml.appendLine("vehicle-drive-mode: ${it.name}")
+        }
+        config.interfaceKeyboard?.let {
+            yaml.appendLine("interface-keyboard: $it")
+        }
+        config.interfaceWidgetWeather?.let {
+            yaml.appendLine("interface-widget-weather: $it")
+        }
+        config.settingsStartup?.let {
+            yaml.appendLine("settings-startup: ${it.name}")
+        }
+        config.settingsCarModel?.let {
+            yaml.appendLine("settings-car-model: ${it.name}")
+        }
+        config.vehiclePedestrianWarning?.let {
+            yaml.appendLine("vehicle-pedestrian-warning: ${it.name}")
         }
 
         return yaml.toString()
