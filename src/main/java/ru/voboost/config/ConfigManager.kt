@@ -78,6 +78,27 @@ class ConfigManager private constructor(
     private val filePath: String = "config.yaml",
     private val assetsProvider: AssetsProvider? = null,
 ) {
+    companion object {
+        // Whitelist of settable Config field names (the 12 Config fields, matching
+        // convertConfigToYaml). setFieldValue rejects any field not in this list
+        // so untrusted callers cannot reach internal/synthetic fields via
+        // reflection. See CFG-01.
+        private val SETTABLE_FIELDS: Set<String> =
+            setOf(
+                "settingsLanguage",
+                "settingsTheme",
+                "settingsInterfaceShiftX",
+                "settingsInterfaceShiftY",
+                "settingsActiveTab",
+                "vehicleFuelMode",
+                "vehicleDriveMode",
+                "interfaceKeyboard",
+                "interfaceWidgetWeather",
+                "settingsStartup",
+                "settingsCarModel",
+                "vehiclePedestrianWarning",
+            )
+    }
     /**
      * Android constructor with Context.
      * @param context Android context for accessing the application's data directory
@@ -491,10 +512,35 @@ class ConfigManager private constructor(
                     IllegalStateException("No configuration loaded"),
                 )
 
+            // Whitelist check: reject any field name not in the set of the 12
+            // Config fields (CFG-01). Without this, a caller could reach
+            // internal/synthetic fields (e.g. Kotlin's Companion) via
+            // reflection and corrupt the Config object's invariants.
+            if (fieldName !in SETTABLE_FIELDS) {
+                return Result.failure(
+                    IllegalArgumentException(
+                        "Field '$fieldName' is not a settable Config field",
+                    ),
+                )
+            }
+
             // Set field value directly using reflection
             val clazz = config::class.java
             val field = clazz.getDeclaredField(fieldName)
             field.isAccessible = true
+
+            // Type check: reject a value whose runtime type is not assignable
+            // to the field's declared type, so a caller cannot set an enum
+            // field to an arbitrary object or null and then serialize it.
+            if (value != null && !field.type.isAssignableFrom(value::class.java)) {
+                return Result.failure(
+                    IllegalArgumentException(
+                        "Value type ${value::class.java.name} is not assignable to " +
+                            "field '$fieldName' of type ${field.type.name}",
+                    ),
+                )
+            }
+
             field.set(config, value)
 
             // Save to disk using the updated current configuration
