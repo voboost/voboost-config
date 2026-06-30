@@ -99,6 +99,7 @@ class ConfigManager private constructor(
                 "vehiclePedestrianWarning",
             )
     }
+
     /**
      * Android constructor with Context.
      * @param context Android context for accessing the application's data directory
